@@ -1,0 +1,184 @@
+{% extends "core/base.html" %}
+{% block title %}Configure AI Mock Interview – AI Interviewer{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto glass-card p-8 rounded-2xl space-y-6">
+  <div class="border-b border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+    <div>
+      <h1 class="text-2xl font-extrabold text-white">Configure Your Live AI Mock Interview</h1>
+      <p class="text-sm text-slate-400">Customize domain, subtopics, extracted resume skills, adaptive difficulty, and session duration.</p>
+    </div>
+    {% if active_resume %}
+    <span class="px-3 py-1 rounded-full text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+      Grounded in Resume: {{ active_resume.original_filename }}
+    </span>
+    {% endif %}
+  </div>
+
+  <form id="interviewConfigForm" method="POST" action="{% url 'interview_configure' %}" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- A. Interview Domain & Subtopics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-1.5">A. Primary Interview Domain (24 Domains)</label>
+        <select id="domainSelect" name="domain" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+          {% for val, label in domains %}
+          <option value="{{ val }}" {% if profile.preferred_domain == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-1.5">D. Interview Type</label>
+        <select id="interviewTypeSelect" name="interview_type" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+          {% for val, label in interview_types %}
+          <option value="{{ val }}" {% if active_resume and val == 'Resume-Based Interview' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Dynamic Subtopics Checkboxes -->
+    <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-3">
+      <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300">Select Relevant Domain Subtopics</label>
+      <div id="subtopicsContainer" class="flex flex-wrap gap-2"></div>
+      <input type="text" name="custom_subtopics" placeholder="Optional: Add custom subtopics (comma-separated)..." class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-white text-xs" />
+    </div>
+
+    <!-- B. Candidate Skills Interactive Chip Editor -->
+    <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-3">
+      <div class="flex items-center justify-between">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-emerald-300">B. Candidate Skills Included in AI Context</label>
+        <span class="text-xs text-slate-400">Click × to remove or add comma-separated custom skills</span>
+      </div>
+      <div id="skillChipsContainer" class="flex flex-wrap gap-2"></div>
+      <div class="flex gap-2">
+        <input type="text" id="newSkillInput" placeholder="Add skill(s) e.g. Random Forest, FastAPI, Docker, System Design..." class="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs" />
+        <button type="button" id="addSkillBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">+ Add Skills</button>
+      </div>
+      <input type="hidden" id="selectedSkillsHidden" name="selected_skills" value="{{ skills_csv }}" />
+    </div>
+
+    <!-- C. Difficulty, E. Duration, F. Question Count -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-purple-300 mb-1.5">C. Difficulty Level</label>
+        <select id="difficultySelect" name="difficulty" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+          {% for val, label in difficulties %}
+          <option value="{{ val }}" {% if val == 'Adaptive' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label class="inline-flex items-center gap-2 text-xs text-slate-300 mt-2">
+          <input type="checkbox" name="enable_adaptive" checked class="rounded bg-slate-900 border-slate-700 text-indigo-600" />
+          Enable Rule-Based Adaptive Progression
+        </label>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-blue-300 mb-1.5">E. Interview Duration</label>
+        <select id="durationSelect" name="duration_minutes" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+          <option value="10">10 Minutes</option>
+          <option value="15" selected>15 Minutes</option>
+          <option value="30">30 Minutes</option>
+          <option value="45">45 Minutes</option>
+          <option value="custom">Custom Duration</option>
+        </select>
+        <input type="number" id="customDurationInput" name="custom_duration" min="5" max="120" value="20" placeholder="Custom minutes" class="hidden w-full mt-2 px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-1.5">F. Max Question Count</label>
+        <input type="number" id="maxQuestionsInput" name="max_questions" min="1" max="50" value="10" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+        <span class="text-[11px] text-slate-400">Configurable from 1 to 50 questions</span>
+      </div>
+    </div>
+
+    <!-- G. Confirmation Preview Card & Launch Button -->
+    <div class="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="text-xs text-slate-300 space-y-1">
+        <div class="font-bold text-white text-sm">Session Confirmation Summary</div>
+        <div id="configSummaryText">Domain: {{ profile.preferred_domain }} • Mode: Adaptive • Questions: 10</div>
+      </div>
+      <button type="submit" class="px-7 py-3.5 rounded-xl font-bold text-white gradient-brand shadow-xl shadow-indigo-600/30 hover:opacity-95 transition">
+        Launch Live AI Interview Room →
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function() {
+    const subtopicsMap = {{ subtopics_map_json|safe }};
+    const domainSelect = document.getElementById('domainSelect');
+    const subtopicsContainer = document.getElementById('subtopicsContainer');
+    const skillChipsContainer = document.getElementById('skillChipsContainer');
+    const selectedSkillsHidden = document.getElementById('selectedSkillsHidden');
+    const newSkillInput = document.getElementById('newSkillInput');
+    const addSkillBtn = document.getElementById('addSkillBtn');
+    const durationSelect = document.getElementById('durationSelect');
+    const customDurationInput = document.getElementById('customDurationInput');
+    const difficultySelect = document.getElementById('difficultySelect');
+    const maxQuestionsInput = document.getElementById('maxQuestionsInput');
+    const configSummaryText = document.getElementById('configSummaryText');
+
+    let skills = selectedSkillsHidden.value.split(',').map(s => s.trim()).filter(Boolean);
+
+    function renderSubtopics() {
+      const dom = domainSelect.value;
+      const subs = subtopicsMap[dom] || ['Core Concepts', 'Architecture & Trade-offs', 'Practical Scenarios'];
+      subtopicsContainer.innerHTML = subs.map((st, i) => `
+        <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/90 border border-slate-700 text-xs text-slate-200 cursor-pointer hover:border-indigo-400">
+          <input type="checkbox" name="subtopics" value="${st}" ${i < 3 ? 'checked' : ''} class="rounded text-indigo-500" />
+          <span>${st}</span>
+        </label>
+      `).join('');
+      updateSummary();
+    }
+
+    function renderSkills() {
+      selectedSkillsHidden.value = skills.join(', ');
+      skillChipsContainer.innerHTML = skills.map((sk, idx) => `
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 text-xs font-medium">
+          <span>${sk}</span>
+          <button type="button" data-idx="${idx}" class="remove-skill-btn text-indigo-400 hover:text-rose-400 font-bold">×</button>
+        </span>
+      `).join('');
+      document.querySelectorAll('.remove-skill-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const i = parseInt(this.getAttribute('data-idx'));
+          skills.splice(i, 1);
+          renderSkills();
+        });
+      });
+      updateSummary();
+    }
+
+    addSkillBtn.addEventListener('click', function() {
+      const parts = newSkillInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      parts.forEach(p => { if (!skills.includes(p)) skills.push(p); });
+      newSkillInput.value = '';
+      renderSkills();
+    });
+
+    durationSelect.addEventListener('change', function() {
+      if (this.value === 'custom') {
+        customDurationInput.classList.remove('hidden');
+      } else {
+        customDurationInput.classList.add('hidden');
+      }
+      updateSummary();
+    });
+
+    function updateSummary() {
+      const dur = durationSelect.value === 'custom' ? customDurationInput.value : durationSelect.value;
+      configSummaryText.textContent = `Domain: ${domainSelect.value} • Difficulty: ${difficultySelect.value} • Duration: ${dur} mins • Max Questions: ${maxQuestionsInput.value} • Skills: ${skills.length}`;
+    }
+
+    domainSelect.addEventListener('change', renderSubtopics);
+    difficultySelect.addEventListener('change', updateSummary);
+    maxQuestionsInput.addEventListener('input', updateSummary);
+    renderSubtopics();
+    renderSkills();
+  })();
+</script>
+{% endblock %}

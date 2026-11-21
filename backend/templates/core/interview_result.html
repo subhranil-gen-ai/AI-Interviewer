@@ -1,0 +1,167 @@
+{% extends "core/base.html" %}
+{% block title %}Interview Performance Report – Session #{{ session.id }}{% endblock %}
+{% block content %}
+<div class="space-y-8">
+  <!-- Executive Summary Banner -->
+  <div class="glass-card p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-l-4 border-l-emerald-500">
+    <div>
+      <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Completed Interview Performance Report • Session #{{ session.id }}</span>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">{{ profile.full_name }} — {{ session.domain }}</h1>
+      <p class="text-xs text-slate-300 mt-1">
+        Type: <strong>{{ session.interview_type }}</strong> • Final Difficulty: <strong>{{ session.current_difficulty }}</strong> • Duration: <strong>{{ session.duration_minutes }} mins</strong> • Questions Attempted: <strong>{{ qa_items|length }}</strong>
+      </p>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="text-right">
+        <span class="text-xs uppercase text-slate-400 block">Overall Score</span>
+        <span class="text-3xl font-extrabold text-emerald-400">{{ session.overall_score }} <span class="text-base font-normal text-slate-400">/ 10</span></span>
+      </div>
+      <a href="{% url 'interview_configure' %}" class="px-5 py-2.5 rounded-xl font-semibold text-xs text-white gradient-brand shadow-lg shadow-indigo-500/25">
+        Practice Again →
+      </a>
+    </div>
+  </div>
+
+  <!-- 6-Metric Summary & Radar Chart -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="glass-card p-6 rounded-2xl">
+      <h2 class="text-base font-bold text-white mb-3">Multi-Dimensional Competency Radar</h2>
+      <div class="relative h-64">
+        <canvas id="resultRadarChart"></canvas>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 glass-card p-6 rounded-2xl space-y-4">
+      <h2 class="text-base font-bold text-white">Executive AI Assessment & Final Recommendations</h2>
+      <p class="text-sm text-slate-200 leading-relaxed">{{ report.executive_summary }}</p>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+          <span class="text-slate-400 block">Technical Knowledge</span>
+          <strong class="text-lg text-indigo-300">{{ report.technical_knowledge|default:session.overall_score }} / 10</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+          <span class="text-slate-400 block">Conceptual Depth</span>
+          <strong class="text-lg text-purple-300">{{ report.conceptual_understanding|default:session.overall_score }} / 10</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+          <span class="text-slate-400 block">Problem Solving</span>
+          <strong class="text-lg text-blue-300">{{ report.problem_solving_ability|default:session.overall_score }} / 10</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+          <span class="text-slate-400 block">Communication</span>
+          <strong class="text-lg text-emerald-300">{{ report.communication|default:session.overall_score }} / 10</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+          <span class="text-slate-400 block">Grammar Accuracy</span>
+          <strong class="text-lg text-teal-300">{{ report.grammar|default:session.overall_score }} / 10</strong>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800">
+          <span class="text-slate-400 block">Next Recommended Tier</span>
+          <strong class="text-lg text-amber-300">{{ report.recommended_next_difficulty|default:"Advanced" }}</strong>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 text-xs">
+        <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+          <strong class="text-emerald-300 block mb-1">Strongest Topics Demonstrated</strong>
+          <ul class="list-disc list-inside text-slate-200 space-y-0.5">
+            {% for t in report.strongest_topics %}<li>{{ t }}</li>{% endfor %}
+          </ul>
+        </div>
+        <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30">
+          <strong class="text-amber-300 block mb-1">Suggested Learning & Focus Topics</strong>
+          <ul class="list-disc list-inside text-slate-200 space-y-0.5">
+            {% for t in report.suggested_learning_topics %}<li>{{ t }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question-by-Question Detailed Breakdown -->
+  <div class="glass-card p-6 rounded-2xl space-y-5">
+    <h2 class="text-lg font-bold text-white">Detailed Question-by-Question Evaluation & Grammar Analysis</h2>
+    {% for item in qa_items %}
+    <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-bold">Q{{ item.question.sequence_number }}</span>
+          <span class="text-xs text-slate-400">{{ item.question.question_category }} • {{ item.question.difficulty }} • Input: {{ item.response.input_type|title }}</span>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300">
+          Score: {{ item.response.score }} / 10
+        </span>
+      </div>
+
+      <div class="text-base font-bold text-white">{{ item.question.question_text }}</div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+          <strong class="text-slate-400 block mb-1">Your Submitted Answer:</strong>
+          <p class="text-slate-200 leading-relaxed">{{ item.response.answer_text }}</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-indigo-500/30">
+          <strong class="text-indigo-300 block mb-1">Grammar-Corrected & Polished Version:</strong>
+          <p class="text-emerald-300 leading-relaxed">{{ item.response.corrected_answer_text }}</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div>
+          <strong class="text-emerald-400">Strengths:</strong>
+          <span class="text-slate-300">{{ item.eval.strengths|join:", " }}</span>
+        </div>
+        <div>
+          <strong class="text-amber-400">Weaknesses / Missing Concepts:</strong>
+          <span class="text-slate-300">{{ item.eval.weaknesses|join:", " }} {{ item.eval.missing_concepts|join:", " }}</span>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-500/25 text-xs">
+        <strong class="text-indigo-300 block mb-1">Improved Model Sample Answer:</strong>
+        <p class="text-slate-200 leading-relaxed">{{ item.eval.improved_sample_answer }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function() {
+    const ctx = document.getElementById('resultRadarChart');
+    if (!ctx) return;
+    const scores = {{ radar_scores_json|safe }};
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['Technical', 'Conceptual', 'Problem Solving', 'Communication', 'Grammar', 'Completeness'],
+        datasets: [{
+          label: 'Session Competency Profile (/10)',
+          data: scores,
+          backgroundColor: 'rgba(99, 102, 241, 0.25)',
+          borderColor: '#818CF8',
+          pointBackgroundColor: '#C084FC',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            min: 0,
+            max: 10,
+            angleLines: { color: 'rgba(148, 163, 184, 0.15)' },
+            grid: { color: 'rgba(148, 163, 184, 0.15)' },
+            pointLabels: { color: '#E2E8F0', font: { size: 11 } },
+            ticks: { display: false }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

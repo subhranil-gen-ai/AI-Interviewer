@@ -1,0 +1,181 @@
+{% extends "core/base.html" %}
+{% block title %}Candidate Dashboard – AI Interviewer{% endblock %}
+{% block content %}
+<div class="space-y-8">
+  <!-- Welcome Banner -->
+  <div class="glass-card p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-l-4 border-l-indigo-500">
+    <div>
+      <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">{{ profile.education }} ({{ profile.graduation_year }})</span>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">Welcome back, {{ profile.full_name }}!</h1>
+      <p class="text-sm text-slate-300 mt-1">Preferred Domain: <strong>{{ profile.preferred_domain }}</strong> • Experience: {{ profile.experience_level }}</p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <a href="{% url 'interview_configure' %}" class="px-5 py-2.5 rounded-xl font-semibold text-sm text-white gradient-brand shadow-lg shadow-indigo-500/25 hover:opacity-95 transition">
+        + Start New Mock Interview
+      </a>
+      <a href="{% url 'resume_upload' %}" class="px-4 py-2.5 rounded-xl font-semibold text-sm bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700 transition">
+        {% if active_resume %}Update Resume{% else %}Upload Resume{% endif %}
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <div class="glass-card p-5 rounded-2xl">
+      <span class="text-xs font-semibold uppercase text-slate-400">Total Interviews Completed</span>
+      <div class="text-3xl font-extrabold text-white mt-2">{{ total_completed }}</div>
+      <span class="text-xs text-indigo-400 mt-1 inline-block">Persisted in SQLite Database</span>
+    </div>
+    <div class="glass-card p-5 rounded-2xl">
+      <span class="text-xs font-semibold uppercase text-slate-400">Average Interview Score</span>
+      <div class="text-3xl font-extrabold text-emerald-400 mt-2">{{ avg_score }} <span class="text-base font-normal text-slate-400">/ 10</span></div>
+      <span class="text-xs text-slate-400 mt-1 inline-block">7-Metric Weighted Evaluation</span>
+    </div>
+    <div class="glass-card p-5 rounded-2xl">
+      <span class="text-xs font-semibold uppercase text-slate-400">Highest Interview Score</span>
+      <div class="text-3xl font-extrabold text-purple-400 mt-2">{{ max_score }} <span class="text-base font-normal text-slate-400">/ 10</span></div>
+      <span class="text-xs text-slate-400 mt-1 inline-block">Peak Session Benchmark</span>
+    </div>
+    <div class="glass-card p-5 rounded-2xl">
+      <span class="text-xs font-semibold uppercase text-slate-400">Resume Analysis Status</span>
+      {% if active_resume %}
+      <div class="text-lg font-bold text-emerald-400 mt-2 truncate">{{ active_resume.original_filename }}</div>
+      <a href="{% url 'resume_analysis' active_resume.id %}" class="text-xs text-indigo-400 hover:underline mt-1 inline-block">View AI Analysis Report →</a>
+      {% else %}
+      <div class="text-lg font-bold text-amber-400 mt-2">No Resume Uploaded</div>
+      <a href="{% url 'resume_upload' %}" class="text-xs text-indigo-400 hover:underline mt-1 inline-block">Upload PDF/DOCX Now →</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Performance Chart & Skill Strengths/Weaknesses -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 glass-card p-6 rounded-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-white">Interview Performance Trajectory</h2>
+        <a href="{% url 'performance_analytics' %}" class="text-xs text-indigo-400 hover:underline">Full Analytics →</a>
+      </div>
+      <div class="relative h-64">
+        <canvas id="dashboardScoreChart"></canvas>
+      </div>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl space-y-5">
+      <div>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-emerald-400 mb-2.5">Strongest Technical Skills</h3>
+        <div class="flex flex-wrap gap-2">
+          {% for sk in strongest_skills %}
+          <span class="px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-medium">{{ sk }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="border-t border-slate-800 pt-4">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-amber-400 mb-2.5">Weakest / Focus Areas</h3>
+        <div class="flex flex-wrap gap-2">
+          {% for wk in weakest_skills %}
+          <span class="px-3 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-medium">{{ wk }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="border-t border-slate-800 pt-4">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-indigo-400 mb-2">Active Profile Skills</h3>
+        <div class="flex flex-wrap gap-1.5">
+          {% for sk in profile.get_skills %}
+          <span class="px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-300 text-xs">{{ sk }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Interview Sessions Table -->
+  <div class="glass-card p-6 rounded-2xl">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-white">Recent Interview Sessions</h2>
+      <a href="{% url 'interview_history' %}" class="text-xs text-indigo-400 hover:underline">View All Sessions →</a>
+    </div>
+    {% if recent_sessions %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="text-xs uppercase text-slate-400 border-b border-slate-800">
+          <tr>
+            <th class="py-3 px-3">Session</th>
+            <th class="py-3 px-3">Domain</th>
+            <th class="py-3 px-3">Type</th>
+            <th class="py-3 px-3">Difficulty</th>
+            <th class="py-3 px-3">Status</th>
+            <th class="py-3 px-3">Overall Score</th>
+            <th class="py-3 px-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-800/70">
+          {% for s in recent_sessions %}
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-3 px-3 font-semibold text-white">#{{ s.id }}</td>
+            <td class="py-3 px-3 text-indigo-300 font-medium">{{ s.domain }}</td>
+            <td class="py-3 px-3 text-slate-300">{{ s.interview_type }}</td>
+            <td class="py-3 px-3"><span class="px-2.5 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">{{ s.current_difficulty }}</span></td>
+            <td class="py-3 px-3">
+              {% if s.status == 'completed' %}
+              <span class="px-2.5 py-0.5 rounded-full text-xs bg-emerald-500/20 text-emerald-300">Completed</span>
+              {% else %}
+              <span class="px-2.5 py-0.5 rounded-full text-xs bg-amber-500/20 text-amber-300">{{ s.status|title }}</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-3 font-bold text-white">{{ s.overall_score }} / 10</td>
+            <td class="py-3 px-3 text-right">
+              {% if s.status == 'completed' %}
+              <a href="{% url 'interview_result' s.id %}" class="px-3 py-1.5 rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-semibold transition">View Report</a>
+              {% else %}
+              <a href="{% url 'live_interview_room' s.id %}" class="px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold transition">Resume Room</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-8 text-slate-400 text-sm">
+      No interview sessions recorded yet. Click <strong>Start New Mock Interview</strong> to begin your first AI interview!
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function() {
+    const ctx = document.getElementById('dashboardScoreChart');
+    if (!ctx) return;
+    const labels = {{ chart_labels_json|safe }};
+    const scores = {{ chart_scores_json|safe }};
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.length ? labels : ['No Completed Interviews Yet'],
+        datasets: [{
+          label: 'Interview Overall Score (/10)',
+          data: scores.length ? scores : [0],
+          borderColor: '#6366F1',
+          backgroundColor: 'rgba(99, 102, 241, 0.18)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 5,
+          pointBackgroundColor: '#A855F7'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 10, grid: { color: 'rgba(148, 163, 184, 0.1)' }, ticks: { color: '#94A3B8' } },
+          x: { grid: { display: false }, ticks: { color: '#94A3B8' } }
+        },
+        plugins: { legend: { labels: { color: '#E2E8F0' } } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,591 @@
+{% extends "core/base.html" %}
+{% block title %}Live AI Interview Room – Session #{{ session.id }}{% endblock %}
+{% block content %}
+<div class="space-y-6">
+  <!-- Top Session Status Bar -->
+  <div class="glass-card p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></div>
+      <div>
+        <div class="text-xs text-slate-400 uppercase font-semibold">{{ session.interview_type }} • Session #{{ session.id }}</div>
+        <h1 class="text-lg font-extrabold text-white">{{ session.domain }}</h1>
+      </div>
+    </div>
+
+    <!-- Live Counters: Question Number, Adaptive Difficulty Badge, Session Timer, Progress -->
+    <div class="flex flex-wrap items-center gap-3">
+      <div class="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs">
+        <span class="text-slate-400">Question:</span>
+        <strong id="questionCounterBadge" class="text-white ml-1">{{ current_question.sequence_number }} / {{ session.max_questions }}</strong>
+      </div>
+      <div class="px-3.5 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-xs">
+        <span class="text-indigo-300">Difficulty:</span>
+        <strong id="difficultyBadge" class="text-white ml-1">{{ current_question.difficulty }}</strong>
+      </div>
+      <div class="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs flex items-center gap-1.5">
+        <span class="text-slate-400">Timer:</span>
+        <strong id="interviewTimerDisplay" class="text-emerald-400 font-mono text-sm">{{ session.duration_minutes }}:00</strong>
+      </div>
+      <button type="button" id="pauseResumeBtn" class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500 hover:text-white text-xs font-semibold transition">
+        Pause Interview
+      </button>
+      <a href="{% url 'end_interview' session.id %}" class="px-4 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition">
+        End Interview & View Report
+      </a>
+    </div>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="w-full bg-slate-800/80 h-2 rounded-full overflow-hidden">
+    <div id="interviewProgressBar" class="gradient-brand h-full transition-all duration-500" style="width: {{ progress_pct }}%;"></div>
+  </div>
+
+  <!-- Main 2-Column Live Interview Workspace -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Left Column (7 cols): AI Interviewer Panel + Candidate Answer & Real Microphone Controls -->
+    <div class="lg:col-span-7 space-y-6">
+      <!-- AI Interviewer Active Question Card -->
+      <div class="glass-card p-6 rounded-2xl space-y-4 border-l-4 border-l-indigo-500">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center text-white font-bold text-sm">AI</div>
+            <div>
+              <div class="text-sm font-bold text-white">AI Technical Interviewer</div>
+              <div id="questionTopicText" class="text-xs text-indigo-300">{{ current_question.topic }}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="questionCategoryBadge" class="px-2.5 py-0.5 rounded-full text-xs bg-purple-500/20 border border-purple-500/40 text-purple-300 font-semibold">
+              {{ current_question.question_category }}
+            </span>
+            <span id="followupIndicatorBadge" class="px-2.5 py-0.5 rounded-full text-xs bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-semibold {% if not current_question.is_followup %}hidden{% endif %}">
+              Contextual Follow-Up
+            </span>
+            <button type="button" id="speakQuestionBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition" title="Read Question Aloud">
+              🔊 Speak
+            </button>
+          </div>
+        </div>
+
+        <div id="currentQuestionText" class="text-lg sm:text-xl font-semibold text-white leading-relaxed py-2">
+          {{ current_question.question_text }}
+        </div>
+
+        <div id="followupRationaleBox" class="text-xs text-slate-400 bg-slate-900/80 p-3 rounded-xl border border-slate-800 {% if not current_question.follow_up_rationale %}hidden{% endif %}">
+          <strong>Interviewer Context Note:</strong> <span id="followupRationaleText">{{ current_question.follow_up_rationale }}</span>
+        </div>
+      </div>
+
+      <!-- Candidate Answer & Real Microphone Speech-to-Text Box (Module 6) -->
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-bold text-white">Your Interview Response</h2>
+            <p class="text-xs text-slate-400">Type your response or use the real microphone below (Web Speech API + MediaRecorder).</p>
+          </div>
+          <div id="recordingStatusBadge" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 flex items-center gap-2">
+            <span id="recordingDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+            <span id="recordingStatusText">Mic Ready</span>
+          </div>
+        </div>
+
+        <!-- Real Microphone Controls Toolbar (Module 6 Requirements 1-9) -->
+        <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="startRecordingBtn" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition">
+              🎙️ Start Recording
+            </button>
+            <button type="button" id="stopRecordingBtn" disabled class="px-3.5 py-2 rounded-xl bg-rose-600/40 text-rose-200 text-xs font-semibold flex items-center gap-1.5 opacity-50 cursor-not-allowed transition">
+              ⏹️ Stop Recording
+            </button>
+            <button type="button" id="restartRecordingBtn" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition">
+              🔄 Restart Recording
+            </button>
+            <button type="button" id="clearTranscriptionBtn" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">
+              🗑️ Clear Transcription
+            </button>
+          </div>
+          <audio id="recordedAudioPreview" controls class="hidden h-8 max-w-[200px]"></audio>
+        </div>
+
+        <!-- Microphone Permission / Browser Compatibility Banner -->
+        <div id="micMessageBanner" class="hidden p-3 rounded-xl text-xs border"></div>
+
+        <!-- Editable Answer / Transcription Textarea -->
+        <input type="hidden" id="currentQuestionId" value="{{ current_question.id }}" />
+        <input type="hidden" id="answerInputType" value="text" />
+        <textarea id="candidateAnswerInput" rows="6" placeholder="Speak via microphone or type your technical answer here. You can freely edit transcribed text before submitting..." class="w-full p-4 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm leading-relaxed focus:border-indigo-500 focus:outline-none"></textarea>
+
+        <!-- Action Buttons: Submit Answer, Next Question (after evaluation), Skip Question -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <button type="button" id="skipQuestionBtn" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+            Skip Question →
+          </button>
+          <div class="flex items-center gap-3">
+            <button type="button" id="submitAnswerBtn" class="px-6 py-3 rounded-xl font-bold text-sm text-white gradient-brand shadow-lg shadow-indigo-600/30 hover:opacity-95 transition">
+              Submit Answer for AI Evaluation
+            </button>
+            <button type="button" id="nextQuestionBtn" class="hidden px-6 py-3 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition">
+              Load Next Question →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column (5 cols): Live AI Evaluation Feedback, Grammar Correction & Conversation Transcript -->
+    <div class="lg:col-span-5 space-y-6">
+      <!-- Instant AI Answer Evaluation & Grammar Panel (Modules 7 & 8) -->
+      <div id="liveEvaluationCard" class="glass-card p-6 rounded-2xl space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white">Real-Time AI Evaluation & Grammar Coach</h3>
+          <span id="evalOverallScoreBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-500/20 text-indigo-300">
+            Awaiting Submission
+          </span>
+        </div>
+
+        <div id="evalPlaceholderText" class="text-xs text-slate-400 leading-relaxed">
+          Submit your answer to view your 7-dimension semantic evaluation (Technical Correctness, Relevance, Conceptual Understanding, Completeness, Clarity, Communication, Grammar), grammar-corrected version, and adaptive difficulty update.
+        </div>
+
+        <div id="evalDetailsContainer" class="hidden space-y-4 text-xs">
+          <!-- 7 Metric Bars -->
+          <div id="evalMetricGrid" class="grid grid-cols-2 gap-2.5"></div>
+
+          <!-- Adaptive Difficulty Notification -->
+          <div id="adaptiveUpdateBox" class="p-3 rounded-xl bg-indigo-950/60 border border-indigo-500/30 text-indigo-200"></div>
+
+          <!-- Grammar Correction (Module 8) -->
+          <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1.5">
+            <div class="font-bold text-purple-300">Grammar & Communication Polish (Meaning Preserved)</div>
+            <div class="text-slate-300"><strong>Corrected Answer:</strong> <span id="evalCorrectedAnswer" class="text-emerald-300"></span></div>
+            <div class="text-slate-400"><strong>Notes:</strong> <span id="evalGrammarNotes"></span></div>
+          </div>
+
+          <!-- Strengths, Missing Concepts & Model Sample Answer -->
+          <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+            <div><strong class="text-emerald-400">Strengths:</strong> <span id="evalStrengthsText" class="text-slate-200"></span></div>
+            <div><strong class="text-amber-400">Missing Concepts / Weaknesses:</strong> <span id="evalWeaknessesText" class="text-slate-200"></span></div>
+            <div><strong class="text-indigo-300">10/10 Model Answer:</strong> <p id="evalSampleAnswerText" class="text-slate-300 mt-1 leading-relaxed"></p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversation Memory Transcript (Module 5.F) -->
+      <div class="glass-card p-6 rounded-2xl space-y-3">
+        <h3 class="text-base font-bold text-white">Interview Conversation Memory</h3>
+        <div id="conversationTranscriptList" class="space-y-3 max-h-96 overflow-y-auto pr-1">
+          {% for item in answered_history %}
+          <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-indigo-300">Q{{ item.sequence }} ({{ item.category }} • {{ item.difficulty }})</span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">{{ item.score }} / 10</span>
+            </div>
+            <div class="text-slate-200 font-medium">{{ item.question_text }}</div>
+            <div class="text-slate-400"><strong>Your Answer:</strong> {{ item.answer_text }}</div>
+          </div>
+          {% empty %}
+          <p id="emptyTranscriptMsg" class="text-xs text-slate-400">Previous questions, answers, and evaluation scores in this session will appear here.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function() {
+    const sessionId = {{ session.id }};
+    const maxQuestions = {{ session.max_questions }};
+    const csrfToken = "{{ csrf_token }}";
+
+    // DOM Elements
+    const questionCounterBadge = document.getElementById('questionCounterBadge');
+    const difficultyBadge = document.getElementById('difficultyBadge');
+    const interviewTimerDisplay = document.getElementById('interviewTimerDisplay');
+    const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+    const interviewProgressBar = document.getElementById('interviewProgressBar');
+    const questionTopicText = document.getElementById('questionTopicText');
+    const questionCategoryBadge = document.getElementById('questionCategoryBadge');
+    const followupIndicatorBadge = document.getElementById('followupIndicatorBadge');
+    const currentQuestionText = document.getElementById('currentQuestionText');
+    const followupRationaleBox = document.getElementById('followupRationaleBox');
+    const followupRationaleText = document.getElementById('followupRationaleText');
+    const currentQuestionId = document.getElementById('currentQuestionId');
+    const answerInputType = document.getElementById('answerInputType');
+    const candidateAnswerInput = document.getElementById('candidateAnswerInput');
+    const submitAnswerBtn = document.getElementById('submitAnswerBtn');
+    const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+    const skipQuestionBtn = document.getElementById('skipQuestionBtn');
+    const speakQuestionBtn = document.getElementById('speakQuestionBtn');
+
+    // Microphone Elements
+    const startRecordingBtn = document.getElementById('startRecordingBtn');
+    const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+    const restartRecordingBtn = document.getElementById('restartRecordingBtn');
+    const clearTranscriptionBtn = document.getElementById('clearTranscriptionBtn');
+    const recordingStatusBadge = document.getElementById('recordingStatusBadge');
+    const recordingDot = document.getElementById('recordingDot');
+    const recordingStatusText = document.getElementById('recordingStatusText');
+    const micMessageBanner = document.getElementById('micMessageBanner');
+    const recordedAudioPreview = document.getElementById('recordedAudioPreview');
+
+    // Evaluation Elements
+    const evalOverallScoreBadge = document.getElementById('evalOverallScoreBadge');
+    const evalPlaceholderText = document.getElementById('evalPlaceholderText');
+    const evalDetailsContainer = document.getElementById('evalDetailsContainer');
+    const evalMetricGrid = document.getElementById('evalMetricGrid');
+    const adaptiveUpdateBox = document.getElementById('adaptiveUpdateBox');
+    const evalCorrectedAnswer = document.getElementById('evalCorrectedAnswer');
+    const evalGrammarNotes = document.getElementById('evalGrammarNotes');
+    const evalStrengthsText = document.getElementById('evalStrengthsText');
+    const evalWeaknessesText = document.getElementById('evalWeaknessesText');
+    const evalSampleAnswerText = document.getElementById('evalSampleAnswerText');
+    const conversationTranscriptList = document.getElementById('conversationTranscriptList');
+
+    // 1. Live Countdown Timer + Pause/Resume
+    let remainingSeconds = {{ session.duration_minutes }} * 60;
+    let isPaused = false;
+    const timerInterval = setInterval(() => {
+      if (isPaused) return;
+      if (remainingSeconds <= 0) {
+        clearInterval(timerInterval);
+        window.location.href = `/interview/${sessionId}/end/`;
+        return;
+      }
+      remainingSeconds--;
+      const mins = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+      const secs = String(remainingSeconds % 60).padStart(2, '0');
+      interviewTimerDisplay.textContent = `${mins}:${secs}`;
+    }, 1000);
+
+    pauseResumeBtn.addEventListener('click', async function() {
+      isPaused = !isPaused;
+      this.textContent = isPaused ? 'Resume Interview' : 'Pause Interview';
+      candidateAnswerInput.disabled = isPaused;
+      submitAnswerBtn.disabled = isPaused;
+      try {
+        await fetch(`/interview/${sessionId}/toggle-pause/`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': csrfToken }
+        });
+      } catch (e) {}
+    });
+
+    // Optional Text-to-Speech for AI Interviewer Question
+    speakQuestionBtn.addEventListener('click', function() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(currentQuestionText.textContent.trim());
+        utter.rate = 1.0;
+        window.speechSynthesis.speak(utter);
+      }
+    });
+
+    // =========================================================================
+    // 2. MODULE 6: REAL MICROPHONE & SPEECH-TO-TEXT (Web Speech API + MediaRecorder)
+    // =========================================================================
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let mediaRecorder = null;
+    let audioStream = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let committedTranscript = '';
+
+    function showMicBanner(msg, isError) {
+      micMessageBanner.classList.remove('hidden', 'bg-rose-950/70', 'border-rose-500/40', 'text-rose-200', 'bg-indigo-950/70', 'border-indigo-500/40', 'text-indigo-200');
+      if (isError) {
+        micMessageBanner.classList.add('bg-rose-950/70', 'border-rose-500/40', 'text-rose-200');
+      } else {
+        micMessageBanner.classList.add('bg-indigo-950/70', 'border-indigo-500/40', 'text-indigo-200');
+      }
+      micMessageBanner.textContent = msg;
+    }
+
+    function setRecordingUIState(active, statusLabel) {
+      isRecording = active;
+      recordingStatusText.textContent = statusLabel;
+      if (active) {
+        recordingDot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 pulse-mic';
+        startRecordingBtn.disabled = true;
+        startRecordingBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        stopRecordingBtn.disabled = false;
+        stopRecordingBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-rose-600/40');
+        stopRecordingBtn.classList.add('bg-rose-600', 'hover:bg-rose-500');
+      } else {
+        recordingDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        startRecordingBtn.disabled = false;
+        startRecordingBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        stopRecordingBtn.disabled = true;
+        stopRecordingBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-rose-600/40');
+        stopRecordingBtn.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+      }
+    }
+
+    async function startRealMicrophoneRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showMicBanner('Browser microphone access (navigator.mediaDevices.getUserMedia) is unavailable in this browser or non-HTTPS context. Please use Chrome/Edge or type your answer directly.', true);
+        return;
+      }
+
+      try {
+        // Request real hardware microphone stream
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(audioStream);
+        mediaRecorder.ondataavailable = (evt) => {
+          if (evt.data && evt.data.size > 0) audioChunks.push(evt.data);
+        };
+        mediaRecorder.onstop = () => {
+          if (audioChunks.length > 0) {
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            recordedAudioPreview.src = URL.createObjectURL(blob);
+            recordedAudioPreview.classList.remove('hidden');
+          }
+          if (audioStream) {
+            audioStream.getTracks().forEach(track => track.stop());
+          }
+        };
+        mediaRecorder.start();
+        answerInputType.value = 'voice';
+        setRecordingUIState(true, 'Recording Live Audio...');
+
+        // Start real-time Web Speech API Speech-to-Text if supported by browser
+        if (SpeechRecognition) {
+          committedTranscript = candidateAnswerInput.value ? (candidateAnswerInput.value.trim() + ' ') : '';
+          recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          recognition.onresult = (event) => {
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const phrase = event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                committedTranscript += phrase + ' ';
+              } else {
+                interimTranscript += phrase;
+              }
+            }
+            candidateAnswerInput.value = (committedTranscript + interimTranscript).trim();
+          };
+
+          recognition.onerror = (event) => {
+            if (event.error === 'not-allowed') {
+              showMicBanner('Microphone speech recognition permission was denied by the browser.', true);
+            } else if (event.error !== 'aborted') {
+              showMicBanner(`Speech recognition notice (${event.error}): audio is still being captured via MediaRecorder; you may also edit the transcription text box directly.`, false);
+            }
+          };
+
+          recognition.start();
+          showMicBanner('Live microphone active: speaking is being transcribed in real time via Browser Web Speech API + MediaRecorder.', false);
+        } else {
+          showMicBanner('Microphone audio is recording via MediaRecorder, but your browser does not support Web Speech API live transcription (use Google Chrome or Microsoft Edge for real-time speech-to-text).', true);
+        }
+
+      } catch (err) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          showMicBanner('Microphone permission denied. Please allow microphone access in your browser address bar and try again.', true);
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          showMicBanner('No physical microphone hardware was detected on this device.', true);
+        } else {
+          showMicBanner(`Microphone error (${err.name}): ${err.message}`, true);
+        }
+        setRecordingUIState(false, 'Mic Error');
+      }
+    }
+
+    function stopRealMicrophoneRecording() {
+      if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+        recognition = null;
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.stop(); } catch (e) {}
+      }
+      setRecordingUIState(false, 'Recording Saved');
+    }
+
+    startRecordingBtn.addEventListener('click', startRealMicrophoneRecording);
+    stopRecordingBtn.addEventListener('click', stopRealMicrophoneRecording);
+    restartRecordingBtn.addEventListener('click', function() {
+      stopRealMicrophoneRecording();
+      candidateAnswerInput.value = '';
+      committedTranscript = '';
+      recordedAudioPreview.classList.add('hidden');
+      setTimeout(startRealMicrophoneRecording, 250);
+    });
+    clearTranscriptionBtn.addEventListener('click', function() {
+      candidateAnswerInput.value = '';
+      committedTranscript = '';
+    });
+
+    // =========================================================================
+    // 3. SUBMIT ANSWER -> LIVE EVALUATION -> CONTEXTUAL NEXT QUESTION
+    // =========================================================================
+    let pendingNextQuestion = null;
+
+    function loadQuestionIntoUI(nq) {
+      currentQuestionId.value = nq.id;
+      questionCounterBadge.textContent = `${nq.sequence_number} / ${maxQuestions}`;
+      difficultyBadge.textContent = nq.difficulty;
+      questionTopicText.textContent = nq.topic;
+      questionCategoryBadge.textContent = nq.question_category;
+      currentQuestionText.textContent = nq.question_text;
+
+      if (nq.is_followup) {
+        followupIndicatorBadge.classList.remove('hidden');
+      } else {
+        followupIndicatorBadge.classList.add('hidden');
+      }
+
+      if (nq.follow_up_rationale) {
+        followupRationaleBox.classList.remove('hidden');
+        followupRationaleText.textContent = nq.follow_up_rationale;
+      } else {
+        followupRationaleBox.classList.add('hidden');
+      }
+
+      const pct = Math.round(((nq.sequence_number - 1) / Math.max(1, maxQuestions)) * 100);
+      interviewProgressBar.style.width = `${pct}%`;
+
+      candidateAnswerInput.value = '';
+      candidateAnswerInput.disabled = false;
+      committedTranscript = '';
+      answerInputType.value = 'text';
+      recordedAudioPreview.classList.add('hidden');
+      submitAnswerBtn.classList.remove('hidden');
+      submitAnswerBtn.disabled = false;
+      submitAnswerBtn.textContent = 'Submit Answer for AI Evaluation';
+      nextQuestionBtn.classList.add('hidden');
+      pendingNextQuestion = null;
+    }
+
+    submitAnswerBtn.addEventListener('click', async function() {
+      if (isRecording) stopRealMicrophoneRecording();
+      const ans = candidateAnswerInput.value.trim();
+      if (!ans) {
+        showMicBanner('Please type or record your answer before submitting, or click Skip Question.', true);
+        return;
+      }
+
+      submitAnswerBtn.disabled = true;
+      submitAnswerBtn.textContent = 'Evaluating Answer with AI...';
+      const askedQuestionText = currentQuestionText.textContent.trim();
+      const askedSeq = questionCounterBadge.textContent.split('/')[0].trim();
+      const askedCat = questionCategoryBadge.textContent.trim();
+      const askedDiff = difficultyBadge.textContent.trim();
+
+      try {
+        const resp = await fetch(`/interview/${sessionId}/submit-answer/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            question_id: parseInt(currentQuestionId.value),
+            answer_text: ans,
+            input_type: answerInputType.value
+          })
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          showMicBanner(data.error || 'Could not submit answer.', true);
+          submitAnswerBtn.disabled = false;
+          submitAnswerBtn.textContent = 'Submit Answer for AI Evaluation';
+          return;
+        }
+
+        // Populate Real-Time Evaluation Panel
+        const ev = data.evaluation;
+        const ad = data.adaptive || {};
+        evalPlaceholderText.classList.add('hidden');
+        evalDetailsContainer.classList.remove('hidden');
+        evalOverallScoreBadge.textContent = `Overall Score: ${ev.overall_score} / 10`;
+
+        const metrics = [
+          ['Technical Correctness', ev.technical_correctness],
+          ['Relevance', ev.relevance],
+          ['Conceptual Depth', ev.conceptual_understanding],
+          ['Completeness', ev.completeness],
+          ['Clarity', ev.clarity],
+          ['Communication', ev.communication_quality],
+          ['Grammar', ev.grammar]
+        ];
+        evalMetricGrid.innerHTML = metrics.map(([label, val]) => `
+          <div class="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <span class="text-slate-300">${label}</span>
+            <strong class="text-indigo-300">${val}/10</strong>
+          </div>
+        `).join('');
+
+        adaptiveUpdateBox.innerHTML = `<strong>Adaptive Difficulty Engine:</strong> ${ad.rationale || 'Difficulty maintained.'} (Next Tier: <strong>${ad.recommended_difficulty || askedDiff}</strong>)`;
+        evalCorrectedAnswer.textContent = (ev.grammar_analysis && ev.grammar_analysis.corrected_answer) || ans;
+        evalGrammarNotes.textContent = ((ev.grammar_analysis && ev.grammar_analysis.explanation_of_mistakes) || []).join(' ');
+        evalStrengthsText.textContent = (ev.strengths || []).join(' • ');
+        evalWeaknessesText.textContent = (ev.weaknesses || []).concat(ev.missing_concepts || []).join(' • ');
+        evalSampleAnswerText.textContent = ev.improved_sample_answer || '';
+
+        // Prepend to Conversation Memory Transcript
+        const emptyMsg = document.getElementById('emptyTranscriptMsg');
+        if (emptyMsg) emptyMsg.remove();
+        const card = document.createElement('div');
+        card.className = 'p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs space-y-1.5';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-indigo-300">Q${askedSeq} (${askedCat} • ${askedDiff})</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">${ev.overall_score} / 10</span>
+          </div>
+          <div class="text-slate-200 font-medium">${askedQuestionText}</div>
+          <div class="text-slate-400"><strong>Your Answer:</strong> ${ans}</div>
+        `;
+        conversationTranscriptList.prepend(card);
+
+        if (data.status === 'interview_completed') {
+          submitAnswerBtn.textContent = 'Interview Complete! Redirecting to Report...';
+          setTimeout(() => { window.location.href = data.redirect_url; }, 1400);
+        } else if (data.next_question) {
+          pendingNextQuestion = data.next_question;
+          candidateAnswerInput.disabled = true;
+          submitAnswerBtn.classList.add('hidden');
+          nextQuestionBtn.classList.remove('hidden');
+        }
+      } catch (err) {
+        showMicBanner('Network error while submitting answer: ' + err.message, true);
+        submitAnswerBtn.disabled = false;
+        submitAnswerBtn.textContent = 'Submit Answer for AI Evaluation';
+      }
+    });
+
+    nextQuestionBtn.addEventListener('click', function() {
+      if (pendingNextQuestion) {
+        loadQuestionIntoUI(pendingNextQuestion);
+      }
+    });
+
+    skipQuestionBtn.addEventListener('click', async function() {
+      if (isRecording) stopRealMicrophoneRecording();
+      skipQuestionBtn.disabled = true;
+      try {
+        const resp = await fetch(`/interview/${sessionId}/skip-question/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+          body: JSON.stringify({ question_id: parseInt(currentQuestionId.value) })
+        });
+        const data = await resp.json();
+        if (data.status === 'interview_completed') {
+          window.location.href = data.redirect_url;
+        } else if (data.next_question) {
+          loadQuestionIntoUI(data.next_question);
+        }
+      } catch (e) {}
+      skipQuestionBtn.disabled = false;
+    });
+  })();
+</script>
+{% endblock %}

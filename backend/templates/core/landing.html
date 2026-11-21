@@ -1,0 +1,51 @@
+{% extends "core/base.html" %}
+{% block title %}AI Interviewer – Intelligent Technical & HR Interview Simulation Platform{% endblock %}
+{% block content %}
+<div class="space-y-16 py-6">
+  <!-- Hero Section -->
+  <section class="text-center max-w-4xl mx-auto space-y-6">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
+      <span>B.Tech CSE Final-Year Capstone Platform • Django + FastAPI + Google Gemini LLM + Web Speech API</span>
+    </div>
+    <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
+      Master Technical & HR Interviews with a <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-blue-400">Conversational AI Interviewer</span>
+    </h1>
+    <p class="text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+      Upload your PDF/DOCX resume, extract skills & projects automatically, and enter a realistic voice-enabled live interview room. Receive contextual follow-up questions, 7-dimension semantic answer scoring, grammar correction, adaptive difficulty progression, and ethical AI recruiter screening.
+    </p>
+    <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+      <a href="{% url 'register' %}" class="px-7 py-3.5 rounded-xl font-semibold text-white gradient-brand shadow-xl shadow-indigo-600/30 hover:opacity-95 transition">
+        Start Free Mock Interview
+      </a>
+      <a href="{% url 'login' %}" class="px-7 py-3.5 rounded-xl font-semibold bg-slate-800/90 border border-slate-700 text-slate-200 hover:bg-slate-700 transition">
+        Candidate / Recruiter Login
+      </a>
+    </div>
+  </section>
+
+  <!-- 3-Tier Architecture & Module Grid -->
+  <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="glass-card p-6 rounded-2xl space-y-3">
+      <div class="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold">01</div>
+      <h3 class="text-lg font-bold text-white">Resume Intelligence & Project Grounding</h3>
+      <p class="text-sm text-slate-300 leading-relaxed">
+        Parses PDF and DOCX resumes to extract programming languages, frameworks, projects, and internships. Generates interview questions directly from your actual projects (e.g., Random Forest Fraud Detection, Flask APIs).
+      </p>
+    </div>
+    <div class="glass-card p-6 rounded-2xl space-y-3">
+      <div class="w-11 h-11 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold">02</div>
+      <h3 class="text-lg font-bold text-white">Adaptive Conversational Interview & Real Mic</h3>
+      <p class="text-sm text-slate-300 leading-relaxed">
+        Behaves like a human technical interviewer across {{ domains_count }} domains. Uses browser Web Speech API & MediaRecorder for real voice answers, probing deeper on strong answers and clarifying missing concepts.
+      </p>
+    </div>
+    <div class="glass-card p-6 rounded-2xl space-y-3">
+      <div class="w-11 h-11 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">03</div>
+      <h3 class="text-lg font-bold text-white">7-Metric Semantic Scoring & Recruiter Screening</h3>
+      <p class="text-sm text-slate-300 leading-relaxed">
+        Evaluates semantic meaning (not rigid keywords) across Technical Correctness, Conceptual Depth, Relevance, Completeness, Clarity, Communication, and Grammar, plus multi-resume recruiter comparison.
+      </p>
+    </div>
+  </section>
+</div>
+{% endblock %}

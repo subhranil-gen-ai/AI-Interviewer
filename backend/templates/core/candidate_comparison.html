@@ -1,0 +1,78 @@
+{% extends "core/base.html" %}
+{% block title %}Candidate Comparison Dashboard – {{ job.job_title }}{% endblock %}
+{% block content %}
+<div class="space-y-8">
+  <div class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <span class="text-xs font-semibold uppercase text-indigo-400">Side-by-Side Candidate Comparison</span>
+      <h1 class="text-2xl font-extrabold text-white">{{ job.job_title }} — {{ screenings|length }} Candidate(s)</h1>
+    </div>
+    <a href="{% url 'candidate_screening' job.id %}" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold hover:bg-slate-700">
+      ← Back to Resume Screening
+    </a>
+  </div>
+
+  <!-- Comparison Chart -->
+  <div class="glass-card p-6 rounded-2xl">
+    <h2 class="text-base font-bold text-white mb-4">Multi-Candidate Job Match vs Skill & Project Alignment (%)</h2>
+    <div class="relative h-72">
+      <canvas id="candidateCompareChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Side-by-Side Comparison Table -->
+  <div class="glass-card p-6 rounded-2xl overflow-x-auto">
+    <h2 class="text-base font-bold text-white mb-4">Structured Candidate Comparison Matrix</h2>
+    <table class="w-full text-left text-xs">
+      <thead class="uppercase text-slate-400 border-b border-slate-800">
+        <tr>
+          <th class="py-3 px-3">Rank & Candidate</th>
+          <th class="py-3 px-3">Overall Match %</th>
+          <th class="py-3 px-3">Matching Skills</th>
+          <th class="py-3 px-3">Missing Skills</th>
+          <th class="py-3 px-3">Key Projects</th>
+          <th class="py-3 px-3">Education & Experience</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800/70">
+        {% for sc in screenings %}
+        {% with rep=sc.get_screening_report %}
+        <tr class="hover:bg-slate-800/40">
+          <td class="py-3.5 px-3 font-bold text-white">#{{ forloop.counter }} {{ sc.candidate_name }}</td>
+          <td class="py-3.5 px-3 font-extrabold text-emerald-400 text-sm">{{ sc.match_score }}%</td>
+          <td class="py-3.5 px-3 text-emerald-300">{{ rep.matching_skills|join:", "|default:"—" }}</td>
+          <td class="py-3.5 px-3 text-amber-300">{{ rep.missing_skills|join:", "|default:"None" }}</td>
+          <td class="py-3.5 px-3 text-slate-300">{{ rep.relevant_projects|join:"; " }}</td>
+          <td class="py-3.5 px-3 text-slate-300">{{ rep.education_relevance }} ({{ rep.experience_summary }})</td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function() {
+    const ctx = document.getElementById('candidateCompareChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: {{ chart_labels_json|safe }},
+        datasets: [
+          { label: 'Overall Job Match %', data: {{ chart_matches_json|safe }}, backgroundColor: '#6366F1' },
+          { label: 'Required Skills Match %', data: {{ chart_skills_scores_json|safe }}, backgroundColor: '#10B981' },
+          { label: 'Project Relevance %', data: {{ chart_project_scores_json|safe }}, backgroundColor: '#A855F7' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { min: 0, max: 100 } }
+      }
+    });
+  })();
+</script>
+{% endblock %}

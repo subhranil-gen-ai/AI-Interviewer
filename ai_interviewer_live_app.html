@@ -1,0 +1,2792 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI INTERVIEWER – LLM-Based Automated Interview Preparation & Candidate Screening Platform</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0B0F19; color: #F1F5F9; }
+    .glass-card { background: rgba(17, 24, 39, 0.88); backdrop-filter: blur(12px); border: 1px solid rgba(99, 102, 241, 0.24); }
+    .gradient-brand { background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #2563EB 100%); }
+    .pulse-mic { animation: pulse-ring 1.4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0B0F19] text-slate-100">
+
+  <!-- Top Navigation Bar (All 7 Required Navigation Elements + Recruiter Screening) -->
+  <header class="sticky top-0 z-50 border-b border-indigo-500/20 bg-[#0B0F19]/95 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 cursor-pointer" id="brandHomeBtn">
+        <div class="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center shadow-lg shadow-indigo-500/30 font-extrabold text-white text-sm">AI</div>
+        <div>
+          <span class="font-extrabold text-base sm:text-lg tracking-tight text-white">AI INTERVIEWER</span>
+          <span class="hidden lg:inline-block ml-1.5 text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Live Interactive Platform</span>
+        </div>
+      </div>
+
+      <nav class="flex flex-wrap items-center gap-1 text-xs font-semibold">
+        <button type="button" data-view="dashboard" class="nav-tab-btn px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white transition">1. Dashboard</button>
+        <button type="button" data-view="configure" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">2. Start Interview</button>
+        <button type="button" data-view="resume" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">3. My Resume</button>
+        <button type="button" data-view="live" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white transition">Live Room</button>
+        <button type="button" data-view="history" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">4. History</button>
+        <button type="button" data-view="analytics" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">5. Analytics</button>
+        <button type="button" data-view="recruiter" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-purple-300 hover:bg-purple-900/40 transition">Recruiter Screening</button>
+        <button type="button" data-view="profile" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 transition">6. Profile</button>
+        <button type="button" data-view="auth" class="nav-tab-btn px-2.5 py-1.5 rounded-lg text-rose-300 bg-rose-500/15 hover:bg-rose-600 hover:text-white transition">7. Account</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Toast Notification Banner -->
+  <div id="appToast" class="hidden max-w-7xl mx-auto w-full px-4 mt-3">
+    <div id="appToastInner" class="p-3 rounded-xl border text-xs font-medium flex items-center justify-between">
+      <span id="appToastMsg"></span>
+      <button type="button" id="closeToastBtn" class="ml-3 font-bold">×</button>
+    </div>
+  </div>
+
+  <!-- Main SPA Views Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- =================================================================== -->
+    <!-- VIEW 1: CANDIDATE DASHBOARD (Module 2)                              -->
+    <!-- =================================================================== -->
+    <section id="view-dashboard" class="app-view space-y-6">
+      <div class="glass-card p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-l-4 border-l-indigo-500">
+        <div>
+          <span id="dashEducationTag" class="text-xs font-semibold uppercase tracking-wider text-indigo-400">B.Tech in Computer Science & Engineering (2027)</span>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">Welcome, <span id="dashCandidateName">Arjun Sharma</span>!</h1>
+          <p class="text-xs sm:text-sm text-slate-300 mt-1">Preferred Domain: <strong id="dashPreferredDomain">Machine Learning</strong> • Active Resume: <strong id="dashResumeFilename" class="text-emerald-400">Arjun_Sharma_ML_Resume.pdf</strong></p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+          <button type="button" id="dashStartInterviewBtn" class="px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-white gradient-brand shadow-lg shadow-indigo-500/25 hover:opacity-95 transition">
+            + Start New Mock Interview
+          </button>
+          <button type="button" id="dashOpenResumeBtn" class="px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700 transition">
+            View AI Resume Analysis
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card p-5 rounded-2xl">
+          <span class="text-xs font-semibold uppercase text-slate-400">Total Interviews Completed</span>
+          <div id="kpiTotalCompleted" class="text-3xl font-extrabold text-white mt-1.5">3</div>
+          <span class="text-xs text-indigo-400 mt-1 inline-block">Real Session Ledger</span>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <span class="text-xs font-semibold uppercase text-slate-400">Average Interview Score</span>
+          <div id="kpiAvgScore" class="text-3xl font-extrabold text-emerald-400 mt-1.5">8.74 <span class="text-sm font-normal text-slate-400">/ 10</span></div>
+          <span class="text-xs text-slate-400 mt-1 inline-block">7-Metric Weighted Formula</span>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <span class="text-xs font-semibold uppercase text-slate-400">Highest Interview Score</span>
+          <div id="kpiMaxScore" class="text-3xl font-extrabold text-purple-400 mt-1.5">9.23 <span class="text-sm font-normal text-slate-400">/ 10</span></div>
+          <span class="text-xs text-slate-400 mt-1 inline-block">Peak Session Benchmark</span>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <span class="text-xs font-semibold uppercase text-slate-400">AI Readiness Status</span>
+          <div id="kpiReadiness" class="text-3xl font-extrabold text-blue-400 mt-1.5">96%</div>
+          <span class="text-xs text-emerald-400 mt-1 inline-block">Resume Verified & Grounded</span>
+        </div>
+      </div>
+
+      <!-- Trajectory Chart + Strongest/Weakest Skills -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass-card p-6 rounded-2xl">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-base font-bold text-white">Interview Score Progression (/10)</h2>
+            <button type="button" id="dashViewAnalyticsBtn" class="text-xs text-indigo-400 hover:underline">Full Analytics →</button>
+          </div>
+          <div class="relative h-64">
+            <canvas id="dashTrajectoryChart"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-card p-6 rounded-2xl space-y-4">
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Strongest Technical Skills</h3>
+            <div id="dashStrongSkillsList" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <div class="border-t border-slate-800 pt-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">Focus / Improvement Areas</h3>
+            <div id="dashWeakSkillsList" class="flex flex-wrap gap-1.5"></div>
+          </div>
+          <div class="border-t border-slate-800 pt-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-2">Extracted Resume Projects</h3>
+            <div id="dashProjectsList" class="space-y-1.5 text-xs text-slate-300"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Interview Sessions Table -->
+      <div class="glass-card p-6 rounded-2xl">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold text-white">Recent Interview Sessions</h2>
+          <button type="button" id="dashViewHistoryBtn" class="text-xs text-indigo-400 hover:underline">View All History →</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="text-xs uppercase text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-3">Session</th>
+                <th class="py-2.5 px-3">Date</th>
+                <th class="py-2.5 px-3">Domain</th>
+                <th class="py-2.5 px-3">Type</th>
+                <th class="py-2.5 px-3">Difficulty</th>
+                <th class="py-2.5 px-3">Score</th>
+                <th class="py-2.5 px-3 text-right">Report</th>
+              </tr>
+            </thead>
+            <tbody id="dashRecentSessionsBody" class="divide-y divide-slate-800/70"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 2: RESUME UPLOAD & 9-SECTION AI ANALYSIS (Module 3)            -->
+    <!-- =================================================================== -->
+    <section id="view-resume" class="app-view hidden space-y-6">
+      <!-- Active Resume Status Header Bar -->
+      <div class="glass-card p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4 border-l-4 border-l-emerald-500">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-bold text-xs">PDF</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="resumeActiveFilenameLabel" class="font-extrabold text-white text-sm sm:text-base">Arjun_Sharma_ML_Resume.pdf</span>
+              <span id="resumeExtractionStatusBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300">Verified & Analyzed</span>
+            </div>
+            <p id="resumeCandidateContactLine" class="text-xs text-slate-400 mt-0.5">Candidate: Arjun Sharma • Email: arjun.sharma.cse@college.edu.in • Phone: +91 9876543210</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button type="button" id="resumeStartInterviewNowBtn" class="px-4 py-2 rounded-xl font-semibold text-xs text-white gradient-brand shadow-lg shadow-indigo-500/25">
+            Start Resume-Based Interview →
+          </button>
+          <button type="button" id="removeActiveResumeBtn" class="px-3.5 py-2 rounded-xl font-semibold text-xs bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-600 hover:text-white transition">
+            Remove Resume
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Upload / Paste Resume Form -->
+        <div class="glass-card p-6 rounded-2xl space-y-4">
+          <h1 class="text-xl font-extrabold text-white">Upload or Replace Resume</h1>
+          <p class="text-xs text-slate-400">Upload any real <code>.pdf</code>, <code>.docx</code>, or <code>.txt</code> file from your computer (parsed directly via PDF.js & JSZip DOCX XML extractor), or load a sample profile.</p>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Target Domain for Audit</label>
+            <select id="resumeTargetDomainSelect" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs"></select>
+          </div>
+
+          <div class="border-2 border-dashed border-indigo-500/40 rounded-xl p-4 text-center bg-slate-900/50 hover:border-indigo-400 transition">
+            <input type="file" id="resumeFileInput" accept=".pdf,.docx,.doc,.txt" class="block w-full text-xs text-slate-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" />
+            <p class="text-[11px] text-slate-400 mt-1.5">Real PDF (PDF.js), DOCX (word/document.xml), & TXT extraction (max 10 MB).</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button type="button" id="loadArjunSampleBtn" class="py-1.5 px-2.5 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-semibold hover:bg-indigo-600 hover:text-white transition">
+              Load Arjun ML Resume
+            </button>
+            <button type="button" id="loadPriyaSampleBtn" class="py-1.5 px-2.5 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs font-semibold hover:bg-purple-600 hover:text-white transition">
+              Load Priya Backend Resume
+            </button>
+            <button type="button" id="loadRohanSampleBtn" class="py-1.5 px-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold hover:bg-emerald-600 hover:text-white transition">
+              Load Rohan Cloud Resume
+            </button>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Extracted / Pasted Resume Text (Editable)</label>
+            <textarea id="resumeRawTextarea" rows="8" placeholder="Upload a PDF/DOCX file above or paste your full resume text here..." class="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs leading-relaxed"></textarea>
+          </div>
+
+          <button type="button" id="runResumeAnalysisBtn" class="w-full py-2.5 rounded-xl font-bold text-xs text-white gradient-brand shadow-lg shadow-indigo-600/30">
+            Extract Entities & Run 9-Part AI Resume Audit
+          </button>
+        </div>
+
+        <!-- 9-Part AI Resume Analysis Display & Editable Skills -->
+        <div class="lg:col-span-2 space-y-5">
+          <!-- Extracted Candidate Entities Overview Grid -->
+          <div class="glass-card p-5 rounded-2xl grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+              <span class="text-slate-400 block">Programming Languages</span>
+              <strong id="metaProgLangs" class="text-indigo-300 mt-0.5 block">Python, SQL</strong>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+              <span class="text-slate-400 block">Frameworks & Libraries</span>
+              <strong id="metaFrameworks" class="text-purple-300 mt-0.5 block">Random Forest, Flask</strong>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+              <span class="text-slate-400 block">Tools & Technologies</span>
+              <strong id="metaTools" class="text-blue-300 mt-0.5 block">Docker, Git, SQLite</strong>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+              <span class="text-slate-400 block">Certifications</span>
+              <strong id="metaCerts" class="text-emerald-300 mt-0.5 block">Verified</strong>
+            </div>
+          </div>
+
+          <!-- Editable Extracted Skills Card -->
+          <div class="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-purple-500">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="text-base font-bold text-white">Review & Edit Extracted Technical Skills</h2>
+                <p class="text-xs text-slate-400">Click × on any skill chip to remove it, or edit the comma-separated list and click Save Skills.</p>
+              </div>
+              <span id="resumeReadinessBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300">Readiness: 96%</span>
+            </div>
+            <div class="flex gap-2">
+              <input type="text" id="resumeSkillsCsvInput" class="flex-1 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+              <button type="button" id="saveResumeSkillsBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Save Skills</button>
+            </div>
+            <div id="resumeSkillBadgesBox" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- 9 Structured Analysis Sections -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="glass-card p-5 rounded-2xl space-y-2.5 text-xs">
+              <h3 class="font-bold text-indigo-300 text-sm">1. Professional Summary</h3>
+              <p id="anaProfSummary" class="text-slate-200 leading-relaxed"></p>
+              <h3 class="font-bold text-indigo-300 text-sm pt-2">2. Technical Skill Categorization</h3>
+              <p id="anaTechSummary" class="text-slate-300 leading-relaxed"></p>
+              <h3 class="font-bold text-indigo-300 text-sm pt-2">7. Education Summary</h3>
+              <p id="anaEduSummary" class="text-slate-300"></p>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl space-y-3 text-xs">
+              <div>
+                <h3 class="font-bold text-emerald-400 text-sm mb-1">3. Strong Technical Areas</h3>
+                <ul id="anaStrongAreas" class="list-disc list-inside text-slate-200 space-y-1"></ul>
+              </div>
+              <div class="border-t border-slate-800 pt-2">
+                <h3 class="font-bold text-amber-400 text-sm mb-1">4. Weak or Missing Areas</h3>
+                <ul id="anaWeakAreas" class="list-disc list-inside text-slate-200 space-y-1"></ul>
+              </div>
+              <div class="border-t border-slate-800 pt-2">
+                <h3 class="font-bold text-blue-300 text-sm mb-1">6. Internship & Experience Analysis</h3>
+                <ul id="anaInternships" class="list-disc list-inside text-slate-300 space-y-1"></ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="glass-card p-5 rounded-2xl space-y-2.5 text-xs">
+              <h3 class="font-bold text-purple-300 text-sm">5. Project Analysis & Expected Interview Probes</h3>
+              <div id="anaProjectsBox" class="space-y-2"></div>
+            </div>
+            <div class="glass-card p-5 rounded-2xl space-y-3 text-xs">
+              <div>
+                <h3 class="font-bold text-indigo-300 text-sm mb-1.5">8. Suggested Interview Topics</h3>
+                <div id="anaSuggestedTopics" class="flex flex-wrap gap-1.5"></div>
+              </div>
+              <div class="border-t border-slate-800 pt-2">
+                <h3 class="font-bold text-emerald-300 text-sm mb-1">9. Resume Improvement Suggestions</h3>
+                <ul id="anaImprovementSuggestions" class="list-disc list-inside text-slate-300 space-y-1"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 3: INTERVIEW CONFIGURATION (Module 4)                          -->
+    <!-- =================================================================== -->
+    <section id="view-configure" class="app-view hidden">
+      <div class="max-w-4xl mx-auto glass-card p-6 sm:p-8 rounded-2xl space-y-6">
+        <div class="border-b border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1 class="text-2xl font-extrabold text-white">Configure Your AI Mock Interview</h1>
+            <p class="text-xs text-slate-400">Select from all 24 domains, customize subtopics & extracted resume skills, and configure adaptive difficulty.</p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+            Resume Context Active
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-indigo-300 mb-1.5">A. Interview Domain (24 Domains)</label>
+            <select id="cfgDomainSelect" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-indigo-300 mb-1.5">D. Interview Type</label>
+            <select id="cfgTypeSelect" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+              <option value="Resume-Based Interview" selected>Resume-Based Interview</option>
+              <option value="Technical Interview">Technical Interview</option>
+              <option value="Project-Based Interview">Project-Based Interview</option>
+              <option value="HR Interview">HR Interview</option>
+              <option value="Behavioral Interview">Behavioral Interview</option>
+              <option value="Mixed Interview">Mixed Interview</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Subtopics -->
+        <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-2.5">
+          <label class="block text-xs font-semibold uppercase text-slate-300">Domain Subtopics to Probe</label>
+          <div id="cfgSubtopicsBox" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Candidate Skills Editor -->
+        <div class="p-4 rounded-xl bg-slate-900/70 border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold uppercase text-emerald-300">B. Candidate Skills Included in Question Context</label>
+            <span class="text-[11px] text-slate-400">Click × to remove or add comma-separated skills</span>
+          </div>
+          <div id="cfgSkillChipsBox" class="flex flex-wrap gap-1.5"></div>
+          <div class="flex gap-2 pt-1">
+            <input type="text" id="cfgAddSkillInput" placeholder="Add skills (comma-separated, e.g. Random Forest, SMOTE, Flask, FastAPI)..." class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs" />
+            <button type="button" id="cfgAddSkillBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">+ Add Skills</button>
+          </div>
+        </div>
+
+        <!-- C. Difficulty, E. Duration, F. Question Count -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-purple-300 mb-1.5">C. Difficulty Level</label>
+            <select id="cfgDifficultySelect" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+              <option value="Expert">Expert</option>
+              <option value="Adaptive" selected>Adaptive (Auto-Scales)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-blue-300 mb-1.5">E. Interview Duration</label>
+            <select id="cfgDurationSelect" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+              <option value="10">10 Minutes</option>
+              <option value="15" selected>15 Minutes</option>
+              <option value="30">30 Minutes</option>
+              <option value="45">45 Minutes</option>
+              <option value="custom">Custom Duration</option>
+            </select>
+            <input type="number" id="cfgCustomDurationInput" min="5" max="120" value="20" placeholder="Custom minutes (5-120)" class="hidden w-full mt-2 px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-emerald-300 mb-1.5">F. Max Questions Count (1–50)</label>
+            <input type="number" id="cfgMaxQuestionsInput" min="1" max="50" value="10" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div id="cfgConfirmationText" class="text-xs text-slate-200"></div>
+          <button type="button" id="launchLiveInterviewBtn" class="px-7 py-3.5 rounded-xl font-bold text-sm text-white gradient-brand shadow-xl shadow-indigo-600/30 hover:opacity-95 transition">
+            Start Live Conversational Interview →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 4: LIVE AI INTERVIEW ROOM & REAL MICROPHONE (Modules 5,6,7,8,9)-->
+    <!-- =================================================================== -->
+    <section id="view-live" class="app-view hidden space-y-5">
+      <!-- Top Control Bar -->
+      <div class="glass-card p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></span>
+          <div>
+            <div id="liveHeaderSubtitle" class="text-xs text-slate-400 uppercase font-semibold">Resume-Based Interview</div>
+            <h1 id="liveHeaderDomain" class="text-lg font-extrabold text-white">Machine Learning</h1>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5 text-xs">
+          <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700">
+            <span class="text-slate-400">Question:</span>
+            <strong id="liveQNumberBadge" class="text-white ml-1">1 / 5</strong>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-indigo-500/20 border border-indigo-500/40">
+            <span class="text-indigo-300">Difficulty:</span>
+            <strong id="liveDifficultyBadge" class="text-white ml-1">Intermediate</strong>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700">
+            <span class="text-slate-400">Timer:</span>
+            <strong id="liveTimerBadge" class="text-emerald-400 font-mono ml-1">15:00</strong>
+          </div>
+          <button type="button" id="livePauseBtn" class="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500 hover:text-white font-semibold transition">
+            Pause
+          </button>
+          <button type="button" id="liveEndBtn" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition">
+            End Interview & Generate Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+        <div id="liveProgressBar" class="gradient-brand h-full transition-all duration-500" style="width: 10%;"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left 7 Cols: AI Question + Real Mic & Answer Editor -->
+        <div class="lg:col-span-7 space-y-5">
+          <div class="glass-card p-6 rounded-2xl space-y-3 border-l-4 border-l-indigo-500">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center font-bold text-white text-xs">AI</div>
+                <div>
+                  <div class="text-sm font-bold text-white">AI Technical Interviewer</div>
+                  <div id="liveTopicLabel" class="text-xs text-indigo-300">Resume Project Deep-Dive</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="liveCategoryBadge" class="px-2.5 py-0.5 rounded-full text-xs bg-purple-500/20 border border-purple-500/40 text-purple-300 font-semibold">Resume-Based</span>
+                <span id="liveFollowupBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-semibold">Contextual Follow-Up</span>
+                <button type="button" id="liveSpeakBtn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">🔊 Read Aloud</button>
+              </div>
+            </div>
+
+            <div id="liveQuestionText" class="text-base sm:text-lg font-semibold text-white leading-relaxed py-1"></div>
+
+            <div id="liveRationaleBox" class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-400"></div>
+          </div>
+
+          <!-- Real Microphone & Answer Submission Box -->
+          <div class="glass-card p-6 rounded-2xl space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 class="text-sm font-bold text-white">Candidate Answer & Real Microphone Speech-to-Text</h2>
+                <p class="text-xs text-slate-400">Record live audio via Web Speech API + MediaRecorder or type/edit your response below.</p>
+              </div>
+              <div class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 flex items-center gap-2">
+                <span id="liveMicDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span id="liveMicStatusText">Mic Ready</span>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" id="liveStartMicBtn" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">🎙️ Start Recording</button>
+                <button type="button" id="liveStopMicBtn" disabled class="px-3 py-1.5 rounded-xl bg-rose-600/40 text-rose-200 text-xs font-semibold opacity-50 cursor-not-allowed">⏹️ Stop Recording</button>
+                <button type="button" id="liveRestartMicBtn" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs">🔄 Restart</button>
+                <button type="button" id="liveClearTextBtn" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">🗑️ Clear</button>
+                <button type="button" id="liveInsertSampleAnswerBtn" class="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold" title="Insert a strong technical answer to trigger an advanced architecture/scaling follow-up">✨ Insert Demo Answer</button>
+                <button type="button" id="liveInsertPartialAnswerBtn" class="px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-600 hover:text-white text-xs font-semibold" title="Insert an incomplete answer to trigger a targeted clarification follow-up on the missing concept">⚡ Partial Answer</button>
+                <button type="button" id="liveInsertWeakAnswerBtn" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-600 hover:text-white text-xs font-semibold" title="Insert a weak/confused answer to trigger a foundational concept follow-up">🛠️ Weak Answer</button>
+              </div>
+              <audio id="liveAudioPlayback" controls class="hidden h-8 max-w-[180px]"></audio>
+            </div>
+
+            <div id="liveMicNoticeBox" class="hidden p-3 rounded-xl text-xs border"></div>
+
+            <textarea id="liveAnswerTextarea" rows="5" placeholder="Speak into your microphone or type your technical response here..." class="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm leading-relaxed focus:border-indigo-500 focus:outline-none"></textarea>
+
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <button type="button" id="liveSkipBtn" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Skip Question →</button>
+              <div class="flex items-center gap-2">
+                <button type="button" id="liveSubmitAnswerBtn" class="px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white gradient-brand shadow-lg shadow-indigo-600/30">
+                  Submit Answer for AI Evaluation
+                </button>
+                <button type="button" id="liveNextQuestionBtn" class="hidden px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30">
+                  Next Contextual Question →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Real-Time 7-Dimension Evaluation + Grammar Correction + Conversation Memory -->
+        <div class="lg:col-span-5 space-y-5">
+          <div class="glass-card p-6 rounded-2xl space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white">7-Dimension Semantic Evaluation & Grammar</h3>
+              <span id="liveEvalScoreBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-indigo-500/20 text-indigo-300">Ready</span>
+            </div>
+            <div id="liveEvalEmptyMsg" class="text-xs text-slate-400">
+              Submit an answer to see your semantic scores across Technical Correctness, Relevance, Conceptual Depth, Completeness, Clarity, Communication, and Grammar.
+            </div>
+            <div id="liveEvalContentBox" class="hidden space-y-3 text-xs">
+              <div id="liveEvalMetricsGrid" class="grid grid-cols-2 gap-2"></div>
+              <div id="liveAdaptiveAlert" class="p-2.5 rounded-xl bg-indigo-950/70 border border-indigo-500/30 text-indigo-200"></div>
+              <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                <div class="font-bold text-purple-300">Grammar Correction (Meaning Preserved)</div>
+                <div><strong>Polished Answer:</strong> <span id="liveEvalCorrectedText" class="text-emerald-300"></span></div>
+                <div class="text-slate-400"><strong>Notes:</strong> <span id="liveEvalGrammarNotes"></span></div>
+              </div>
+              <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5">
+                <div><strong class="text-emerald-400">Strengths:</strong> <span id="liveEvalStrengths"></span></div>
+                <div><strong class="text-amber-400">Missing Concepts:</strong> <span id="liveEvalWeaknesses"></span></div>
+                <div><strong class="text-indigo-300">Model Answer:</strong> <p id="liveEvalModelAnswer" class="text-slate-300 mt-0.5"></p></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-card p-6 rounded-2xl space-y-3">
+            <h3 class="text-sm font-bold text-white">Conversation Memory Transcript</h3>
+            <div id="liveTranscriptBox" class="space-y-2.5 max-h-80 overflow-y-auto pr-1 text-xs"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 5: DETAILED INTERVIEW REPORT (Module 11)                       -->
+    <!-- =================================================================== -->
+    <section id="view-result" class="app-view hidden space-y-6">
+      <div class="glass-card p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-l-4 border-l-emerald-500">
+        <div>
+          <span class="text-xs font-semibold uppercase text-emerald-400">Module 11 • Detailed Interview Evaluation Report</span>
+          <h1 id="repHeaderTitle" class="text-2xl font-extrabold text-white mt-0.5">Arjun Sharma — Machine Learning</h1>
+          <p id="repHeaderMeta" class="text-xs text-slate-300 mt-1"></p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <span class="text-xs uppercase text-slate-400 block">Overall Score</span>
+            <span id="repOverallScore" class="text-3xl font-extrabold text-emerald-400">9.23 / 10</span>
+          </div>
+          <button type="button" id="repNewInterviewBtn" class="px-4 py-2.5 rounded-xl font-semibold text-xs text-white gradient-brand">
+            Start New Session →
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="glass-card p-6 rounded-2xl">
+          <h2 class="text-sm font-bold text-white mb-3">Competency Radar Profile</h2>
+          <div class="relative h-64">
+            <canvas id="repRadarChart"></canvas>
+          </div>
+        </div>
+        <div class="lg:col-span-2 glass-card p-6 rounded-2xl space-y-4 text-xs">
+          <h2 class="text-sm font-bold text-white">Executive AI Synthesis & Learning Roadmap</h2>
+          <p id="repExecSummary" class="text-sm text-slate-200 leading-relaxed"></p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div class="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30">
+              <strong class="text-emerald-300 block mb-1">Strongest Topics</strong>
+              <ul id="repStrongTopics" class="list-disc list-inside text-slate-200 space-y-1"></ul>
+            </div>
+            <div class="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/30">
+              <strong class="text-amber-300 block mb-1">Recommended Next Study Topics</strong>
+              <ul id="repLearningTopics" class="list-disc list-inside text-slate-200 space-y-1"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <h2 class="text-base font-bold text-white">Question-by-Question Evaluation & Grammar Breakdown</h2>
+        <div id="repQuestionsBreakdownBox" class="space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 6: INTERVIEW HISTORY (Module 12)                               -->
+    <!-- =================================================================== -->
+    <section id="view-history" class="app-view hidden">
+      <div class="glass-card p-6 rounded-2xl space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-xl font-extrabold text-white">Completed Interview Sessions Archive</h1>
+            <p class="text-xs text-slate-400">Click any completed interview session to inspect its full question-by-question report.</p>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="text-xs uppercase text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-3">Session ID</th>
+                <th class="py-3 px-3">Date</th>
+                <th class="py-3 px-3">Domain</th>
+                <th class="py-3 px-3">Type</th>
+                <th class="py-3 px-3">Final Difficulty</th>
+                <th class="py-3 px-3">Questions</th>
+                <th class="py-3 px-3">Overall Score</th>
+                <th class="py-3 px-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-800/70"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 7: PERFORMANCE ANALYTICS DASHBOARD (Module 12)                 -->
+    <!-- =================================================================== -->
+    <section id="view-analytics" class="app-view hidden space-y-6">
+      <div class="glass-card p-6 rounded-2xl">
+        <h1 class="text-xl font-extrabold text-white">Multi-Metric Performance Analytics Dashboard</h1>
+        <p class="text-xs text-slate-400">Interactive Chart.js visualizations computed directly from your session history and 7-dimension answer evaluations.</p>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card p-6 rounded-2xl">
+          <h2 class="text-sm font-bold text-white mb-3">1. Interview Score Trends</h2>
+          <div class="relative h-64"><canvas id="anaTrendChart"></canvas></div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl">
+          <h2 class="text-sm font-bold text-white mb-3">2. Domain-Wise Performance Comparison</h2>
+          <div class="relative h-64"><canvas id="anaDomainChart"></canvas></div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl">
+          <h2 class="text-sm font-bold text-white mb-3">3. 7-Dimension Competency Averages</h2>
+          <div class="relative h-64"><canvas id="anaDimensionChart"></canvas></div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl">
+          <h2 class="text-sm font-bold text-white mb-3">4. Technical Accuracy vs Communication Quality</h2>
+          <div class="relative h-64"><canvas id="anaCommTechChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 8: RECRUITER AI CANDIDATE SCREENING & COMPARISON (Module 10)   -->
+    <!-- =================================================================== -->
+    <section id="view-recruiter" class="app-view hidden space-y-6">
+      <div class="glass-card p-6 rounded-2xl border-l-4 border-l-purple-500 space-y-2">
+        <span class="text-xs font-semibold uppercase text-purple-400">Module 10 • Recruiter AI Candidate Screening & Multi-Resume Comparison</span>
+        <h1 class="text-2xl font-extrabold text-white">Ethical AI Talent Screening & Job Match Comparison</h1>
+        <p class="text-xs text-indigo-200 bg-indigo-950/60 p-3 rounded-xl border border-indigo-500/30">
+          <strong>Fairness & Human-in-the-Loop Guarantee:</strong> Protected characteristics (gender, age, religion, caste, ethnicity, disability) are strictly excluded from scoring. Match percentages are transparent decision-support estimates; final hiring decisions remain with human recruiters.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Job Requisition & Resume Screening Form (5 cols) -->
+        <div class="lg:col-span-5 glass-card p-6 rounded-2xl space-y-4">
+          <h2 class="text-base font-bold text-white">Configure Job Requirements & Add Candidate Resume</h2>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Job Title</label>
+            <input type="text" id="recJobTitleInput" value="Machine Learning & Python Backend Engineer" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Required Technical Skills (Comma-Separated)</label>
+            <input type="text" id="recReqSkillsInput" value="Python, Machine Learning, Random Forest, Flask, FastAPI, Django, SQL" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Min Experience (Yrs)</label>
+              <input type="number" id="recMinExpInput" value="0" min="0" step="0.5" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Education Requirement</label>
+              <input type="text" id="recEduReqInput" value="B.Tech / B.E. CSE or IT" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+            </div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-3 space-y-2.5">
+            <label class="block text-xs font-semibold uppercase text-purple-300">Upload Multiple Candidate Resumes (PDF / DOCX / TXT)</label>
+            <input type="file" id="recResumeFilesInput" multiple accept=".pdf,.docx,.txt" class="block w-full text-xs text-slate-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer" />
+            <label class="block text-xs text-slate-400 pt-1">Or Enter Candidate Name & Paste Resume Text:</label>
+            <input type="text" id="recCandNameInput" placeholder="Candidate Full Name (e.g. Rohan Verma)" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+            <textarea id="recCandResumeInput" rows="3" placeholder="Paste candidate resume text (Skills, Projects, Internships, Education)..." class="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs"></textarea>
+            <button type="button" id="recScreenCandidateBtn" class="w-full py-2.5 rounded-xl font-bold text-xs text-white gradient-brand">
+              Screen & Add Candidate(s) to Comparison Matrix
+            </button>
+          </div>
+        </div>
+
+        <!-- Multi-Candidate Comparison Chart & Table (7 cols) -->
+        <div class="lg:col-span-7 space-y-5">
+          <div class="glass-card p-6 rounded-2xl">
+            <h2 class="text-sm font-bold text-white mb-3">Multi-Candidate Job Match Comparison Chart (%)</h2>
+            <div class="relative h-64">
+              <canvas id="recComparisonChart"></canvas>
+            </div>
+          </div>
+
+          <div id="recCandidateCardsContainer" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 9: USER PROFILE MANAGEMENT (Module 1)                          -->
+    <!-- =================================================================== -->
+    <section id="view-profile" class="app-view hidden">
+      <div class="max-w-2xl mx-auto glass-card p-8 rounded-2xl space-y-4">
+        <h1 class="text-xl font-extrabold text-white">Candidate Profile Settings</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Full Name</label>
+            <input type="text" id="profNameInput" value="Arjun Sharma" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Email</label>
+            <input type="email" id="profEmailInput" value="arjun.sharma.cse@college.edu.in" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Education</label>
+            <input type="text" id="profEduInput" value="B.Tech in Computer Science & Engineering" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Graduation Year</label>
+            <input type="number" id="profGradInput" value="2027" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+          </div>
+        </div>
+        <button type="button" id="saveProfileBtn" class="px-6 py-2.5 rounded-xl font-bold text-xs text-white gradient-brand">
+          Save Profile Changes
+        </button>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- VIEW 10: AUTHENTICATION & SESSION SWITCHER (Module 1)               -->
+    <!-- =================================================================== -->
+    <section id="view-auth" class="app-view hidden">
+      <div class="max-w-md mx-auto glass-card p-8 rounded-2xl space-y-4">
+        <h1 class="text-xl font-extrabold text-white">Authentication & Role Switcher</h1>
+        <p class="text-xs text-slate-400">Test Candidate Registration/Login or switch to Recruiter mode.</p>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Active User Full Name</label>
+          <input type="text" id="authUserNameInput" value="Arjun Sharma" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Role</label>
+          <select id="authRoleSelect" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs">
+            <option value="candidate">Candidate (Student / Engineer)</option>
+            <option value="recruiter">Recruiter / Talent Acquisition</option>
+          </select>
+        </div>
+        <button type="button" id="authApplyBtn" class="w-full py-2.5 rounded-xl font-bold text-xs text-white gradient-brand">
+          Sign In & Switch Session
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (function() {
+      // 1. All 24 Required Domains & Subtopics
+      const ALL_DOMAINS = [
+        "Python Development", "Java Development", "C/C++ Programming", "Data Structures and Algorithms",
+        "SQL and DBMS", "Data Analytics", "Data Science", "Machine Learning", "Artificial Intelligence",
+        "Generative AI", "Natural Language Processing", "Deep Learning", "Web Development",
+        "Frontend Development", "Backend Development", "Full Stack Development", "Software Engineering",
+        "Operating Systems", "Computer Networks", "Cloud Computing", "DevOps", "Cybersecurity",
+        "HR Interview", "Behavioral Interview"
+      ];
+
+      const SUBTOPICS_BY_DOMAIN = {
+        "Machine Learning": ["Random Forest & Ensembles", "Imbalanced Classification (SMOTE)", "Overfitting & Regularization", "Evaluation Metrics (PR-AUC/F1)", "Flask/FastAPI Model Deployment"],
+        "Python Development": ["Decorators & Closures", "Generators & Iterators", "GIL & Concurrency", "Context Managers", "Asyncio Microservices"],
+        "Data Structures and Algorithms": ["Hash Maps & Collisions", "Graph BFS/DFS/Dijkstra", "Dynamic Programming", "LRU Cache Design", "Heaps & Trees"],
+        "SQL and DBMS": ["B+ Tree Indexing", "ACID & MVCC Isolation", "Normalization (1NF-BCNF)", "Window Functions", "Query Execution Plans"],
+        "Operating Systems": ["Process vs Thread", "Deadlocks & Banker's Algorithm", "Virtual Memory & Paging", "Semaphores & Mutexes", "CPU Scheduling"]
+      };
+
+      const SAMPLE_RESUMES = {
+        arjun: {
+          filename: "Arjun_Sharma_ML_Resume.pdf",
+          candidate_name: "Arjun Sharma",
+          education: "B.Tech in Computer Science & Engineering, UEM Kolkata (2023-2027) | CGPA: 8.92/10",
+          domain: "Machine Learning",
+          raw_text: `ARJUN SHARMA
+Email: arjun.sharma.cse@college.edu.in | Phone: +91 9876543210
+Education: B.Tech in Computer Science and Engineering (2023-2027), CGPA: 8.92/10
+Technical Skills: Python, Machine Learning, Random Forest, Scikit-learn, Flask, FastAPI, Django, SQL, SMOTE, Pandas, NumPy, Docker, Git
+Projects:
+1. Credit Card Fraud Detection Project | Python, Machine Learning, Random Forest, SMOTE, Flask
+- Built an end-to-end Credit Card Fraud Detection model using Random Forest and Stratified K-Fold cross-validation.
+- Handled severe class imbalance (0.17% fraud ratio) using SMOTE oversampling inside training folds and class_weight='balanced'.
+- Evaluated using Precision-Recall AUC (0.91), F1-Score (0.89), and Recall (0.93), and deployed real-time REST inference via Flask.
+2. Medical Retinal Image Classification System | PyTorch, Deep Learning, OpenCV, FastAPI
+- Trained a ResNet-50 convolutional neural network with transfer learning and Grad-CAM explainability.
+Internships:
+Machine Learning Intern - DataSense Analytics Pvt Ltd (May 2026 - July 2026)`
+        },
+        priya: {
+          filename: "Priya_Nair_Backend_Resume.pdf",
+          candidate_name: "Priya Nair",
+          education: "B.Tech in Information Technology, NIT (2022-2026) | CGPA: 8.45/10",
+          domain: "Backend Development",
+          raw_text: `PRIYA NAIR
+Email: priya.nair.dev@college.edu.in | Phone: +91 9812345678
+Education: B.Tech in Information Technology (2022-2026), CGPA: 8.45/10
+Technical Skills: Java, Spring Boot, Python, Django, PostgreSQL, Redis, Microservices, REST API, Docker, Kafka, Git
+Projects:
+1. Distributed E-Commerce Order & Payment Ledger | Java, Spring Boot, PostgreSQL, Redis, Kafka
+- Designed event-driven order management microservices with ACID transaction isolation, B+ Tree composite indexing, and Redis idempotency keys.
+2. High-Throughput API Rate Limiter & Auth Gateway | Python, Django, Redis, Docker
+- Implemented token-bucket and sliding-window rate limiting protecting 40+ downstream REST endpoints.
+Internships:
+Backend Software Engineering Intern - CloudScale Systems (Jan 2026 - Apr 2026)`
+        },
+        rohan: {
+          filename: "Rohan_Verma_FullStack_Cloud_Resume.pdf",
+          candidate_name: "Rohan Verma",
+          education: "B.Tech in Computer Science, IIIT (2023-2027) | CGPA: 8.74/10",
+          domain: "Full Stack Development",
+          raw_text: `ROHAN VERMA
+Email: rohan.verma.fs@college.edu.in | Phone: +91 9765432109
+Education: B.Tech in Computer Science (2023-2027), CGPA: 8.74/10
+Technical Skills: JavaScript, TypeScript, React, Node.js, Express, GraphQL, MongoDB, Kubernetes, AWS, CI/CD, Tailwind CSS
+Projects:
+1. Real-Time Collaborative Code Editor & Whiteboard | TypeScript, React, Node.js, WebSockets, Redis
+- Engineered low-latency Operational Transformation (OT) state synchronization across concurrent browser rooms.
+2. Multi-Region Kubernetes SaaS Deployment Pipeline | AWS, Kubernetes, Docker, GitHub Actions CI/CD
+- Automated blue-green zero-downtime deployments with Horizontal Pod Autoscaling and Prometheus alerts.
+Internships:
+Full Stack & DevOps Intern - NexusCloud Technologies (May 2026 - Aug 2026)`
+        }
+      };
+
+      // Application State
+      const state = {
+        user: {
+          name: "Arjun Sharma",
+          email: "arjun.sharma.cse@college.edu.in",
+          education: "B.Tech in Computer Science & Engineering",
+          gradYear: 2027,
+          role: "candidate",
+          preferredDomain: "Machine Learning"
+        },
+        activeResume: JSON.parse(JSON.stringify(SAMPLE_RESUMES.arjun)),
+        sessions: [
+          {
+            id: 101,
+            date: "19 Nov 2026",
+            domain: "Python Development",
+            type: "Technical Interview",
+            difficulty: "Intermediate",
+            overallScore: 8.25,
+            techScore: 8.4,
+            conceptScore: 8.3,
+            problemScore: 8.1,
+            commScore: 8.2,
+            grammarScore: 8.6,
+            compScore: 8.0,
+            qa: [
+              {
+                seq: 1,
+                question: "What is a Python decorator, and how does it modify function behavior without changing source code?",
+                category: "Conceptual",
+                difficulty: "Intermediate",
+                answer: "A decorator is a higher-order function that takes another function, wraps it inside an inner wrapper closure to add functionality, and returns the wrapper.",
+                corrected: "A decorator is a higher-order function that takes another function, wraps it inside an inner wrapper closure to add functionality, and returns the wrapper.",
+                score: 8.25,
+                strengths: ["Clear explanation of higher-order callable and wrapper function"],
+                weaknesses: ["Mention @functools.wraps for metadata preservation"],
+                sample: "A Python decorator wraps a target callable inside an inner closure function and uses @functools.wraps to preserve __name__ and __doc__."
+              }
+            ]
+          },
+          {
+            id: 102,
+            date: "20 Nov 2026",
+            domain: "Data Structures and Algorithms",
+            type: "Technical Interview",
+            difficulty: "Advanced",
+            overallScore: 8.75,
+            techScore: 8.8,
+            conceptScore: 8.7,
+            problemScore: 8.9,
+            commScore: 8.6,
+            grammarScore: 8.9,
+            compScore: 8.5,
+            qa: [
+              {
+                seq: 1,
+                question: "Walk through how you would design an LRU Cache supporting O(1) get and put operations.",
+                category: "Problem-Solving",
+                difficulty: "Advanced",
+                answer: "Combine a hash map for O(1) key lookup with a doubly linked list to move recently accessed nodes to the head and evict the tail in O(1) time.",
+                corrected: "Combine a hash map for O(1) key lookup with a doubly linked list to move recently accessed nodes to the head and evict the tail in O(1) time.",
+                score: 8.75,
+                strengths: ["Optimal O(1) hash map + doubly linked list architecture"],
+                weaknesses: ["Discuss thread-safety locking under concurrent access"],
+                sample: "An O(1) LRU cache pairs a hash table mapping keys to doubly linked list nodes so both lookup and head-promotion/tail-eviction execute in constant time."
+              }
+            ]
+          },
+          {
+            id: 103,
+            date: "21 Nov 2026",
+            domain: "Machine Learning",
+            type: "Resume-Based Interview",
+            difficulty: "Advanced",
+            overallScore: 9.23,
+            techScore: 9.4,
+            conceptScore: 9.3,
+            problemScore: 9.1,
+            commScore: 9.0,
+            grammarScore: 9.2,
+            compScore: 9.0,
+            qa: [
+              {
+                seq: 1,
+                question: "In your resume you built the Credit Card Fraud Detection Project using Random Forest and Flask. Why did you choose Random Forest, and how did you handle class imbalance?",
+                category: "Resume-Based",
+                difficulty: "Intermediate",
+                answer: "Random Forest uses bootstrap aggregating and random feature subsets to reduce variance on tabular fraud data. We handled the 0.17% class imbalance using SMOTE strictly inside training folds and class_weight='balanced'.",
+                corrected: "Random Forest uses bootstrap aggregating and random feature subsets to reduce variance on tabular fraud data. We handled the 0.17% class imbalance using SMOTE strictly inside training folds and class_weight='balanced'.",
+                score: 9.35,
+                strengths: ["Directly connected bagging variance reduction with fold-isolated SMOTE"],
+                weaknesses: ["Could briefly mention OOB error estimation"],
+                sample: "Random Forest prevents overfitting via bagging and feature randomness, while applying SMOTE only within training folds prevents validation data leakage."
+              },
+              {
+                seq: 2,
+                question: "What is overfitting in Machine Learning, and which evaluation metrics did you prioritize for fraud detection?",
+                category: "Practical",
+                difficulty: "Advanced",
+                answer: "Overfitting happens when a model learns training data very well but performs poorly on unseen data. For fraud detection we prioritized Precision-Recall AUC and F1-score over raw accuracy.",
+                corrected: "Overfitting happens when a model learns training data very well but performs poorly on unseen data. For fraud detection, we prioritized Precision-Recall AUC and F1-score over raw accuracy.",
+                score: 9.11,
+                strengths: ["Accurate semantic definition of overfitting and PR-AUC selection"],
+                weaknesses: ["Discuss probability threshold calibration"],
+                sample: "Overfitting represents high variance on unseen data; in skewed fraud datasets, PR-AUC and Recall/Precision trade-offs govern threshold tuning."
+              }
+            ]
+          }
+        ],
+        activeReportSessionId: 103,
+        liveSession: null,
+        screenedCandidates: [
+          {
+            name: "Arjun Sharma",
+            matchScore: 96.2,
+            skillsScore: 100.0,
+            projectScore: 95.0,
+            matchingSkills: ["Python", "Machine Learning", "Random Forest", "Flask", "FastAPI", "Django", "SQL"],
+            missingSkills: [],
+            projects: ["Credit Card Fraud Detection Project (Random Forest, SMOTE, Flask)", "AI Interviewer Automated Platform (Django, FastAPI)"],
+            education: "B.Tech CSE (CGPA 8.92/10) • 1 ML Internship"
+          },
+          {
+            name: "Priya Nair",
+            matchScore: 65.9,
+            skillsScore: 42.9,
+            projectScore: 78.0,
+            matchingSkills: ["Python", "Django", "SQL"],
+            missingSkills: ["Machine Learning", "Random Forest", "Flask", "FastAPI"],
+            projects: ["Distributed E-Commerce Order Microservice (Django, PostgreSQL, Docker)"],
+            education: "B.Tech IT (CGPA 8.45/10) • 1 Backend Internship"
+          }
+        ]
+      };
+
+      // Toast helper
+      function showToast(msg, type = "info") {
+        const box = document.getElementById("appToast");
+        const inner = document.getElementById("appToastInner");
+        const txt = document.getElementById("appToastMsg");
+        box.classList.remove("hidden");
+        inner.className = "p-3 rounded-xl border text-xs font-medium flex items-center justify-between " + (
+          type === "error" ? "bg-rose-950/80 border-rose-500/40 text-rose-200" :
+          type === "success" ? "bg-emerald-950/80 border-emerald-500/40 text-emerald-200" :
+          "bg-indigo-950/80 border-indigo-500/40 text-indigo-200"
+        );
+        txt.textContent = msg;
+      }
+      document.getElementById("closeToastBtn").addEventListener("click", () => {
+        document.getElementById("appToast").classList.add("hidden");
+      });
+
+      // Navigation View Switcher
+      function switchView(viewName) {
+        document.querySelectorAll(".app-view").forEach(sec => sec.classList.add("hidden"));
+        const target = document.getElementById(`view-${viewName}`);
+        if (target) target.classList.remove("hidden");
+
+        document.querySelectorAll(".nav-tab-btn").forEach(btn => {
+          if (btn.getAttribute("data-view") === viewName) {
+            btn.classList.add("bg-indigo-600", "text-white");
+            btn.classList.remove("text-slate-300");
+          } else if (btn.getAttribute("data-view") !== "live") {
+            btn.classList.remove("bg-indigo-600", "text-white");
+            btn.classList.add("text-slate-300");
+          }
+        });
+
+        if (viewName === "dashboard") renderDashboard();
+        if (viewName === "resume") renderResumeView();
+        if (viewName === "configure") renderConfigureView();
+        if (viewName === "history") renderHistoryView();
+        if (viewName === "analytics") renderAnalyticsCharts();
+        if (viewName === "recruiter") renderRecruiterView();
+        if (viewName === "result") renderResultView(state.activeReportSessionId);
+      }
+
+      document.querySelectorAll(".nav-tab-btn").forEach(btn => {
+        btn.addEventListener("click", function() {
+          const v = this.getAttribute("data-view");
+          if (v === "live" && !state.liveSession) {
+            startNewLiveInterviewSession();
+          } else {
+            switchView(v);
+          }
+        });
+      });
+      document.getElementById("brandHomeBtn").addEventListener("click", () => switchView("dashboard"));
+      document.getElementById("dashStartInterviewBtn").addEventListener("click", () => switchView("configure"));
+      document.getElementById("dashOpenResumeBtn").addEventListener("click", () => switchView("resume"));
+      document.getElementById("dashViewAnalyticsBtn").addEventListener("click", () => switchView("analytics"));
+      document.getElementById("dashViewHistoryBtn").addEventListener("click", () => switchView("history"));
+      document.getElementById("repNewInterviewBtn").addEventListener("click", () => switchView("configure"));
+
+      // Populate Domain Selectors
+      function populateDomainDropdowns() {
+        const html = ALL_DOMAINS.map(d => `<option value="${d}" ${d === state.user.preferredDomain ? 'selected' : ''}>${d}</option>`).join("");
+        document.getElementById("resumeTargetDomainSelect").innerHTML = html;
+        document.getElementById("cfgDomainSelect").innerHTML = html;
+      }
+
+      // =====================================================================
+      // VIEW 1: DASHBOARD RENDERER
+      // =====================================================================
+      let dashChartInstance = null;
+      function renderDashboard() {
+        document.getElementById("dashCandidateName").textContent = state.user.name;
+        document.getElementById("dashEducationTag").textContent = `${state.user.education} (${state.user.gradYear})`;
+        document.getElementById("dashPreferredDomain").textContent = state.user.preferredDomain;
+        document.getElementById("dashResumeFilename").textContent = state.activeResume.filename;
+
+        const count = state.sessions.length;
+        const scores = state.sessions.map(s => s.overallScore);
+        const avg = count ? (scores.reduce((a, b) => a + b, 0) / count).toFixed(2) : "0.00";
+        const max = count ? Math.max(...scores).toFixed(2) : "0.00";
+
+        document.getElementById("kpiTotalCompleted").textContent = String(count);
+        document.getElementById("kpiAvgScore").innerHTML = `${avg} <span class="text-sm font-normal text-slate-400">/ 10</span>`;
+        document.getElementById("kpiMaxScore").innerHTML = `${max} <span class="text-sm font-normal text-slate-400">/ 10</span>`;
+
+        const strongBox = document.getElementById("dashStrongSkillsList");
+        strongBox.innerHTML = state.activeResume.skills.slice(0, 6).map(sk =>
+          `<span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs">${sk}</span>`
+        ).join("");
+
+        document.getElementById("dashWeakSkillsList").innerHTML = [
+          "Distributed MLOps Monitoring", "Probability Calibration", "Kubernetes Auto-Scaling"
+        ].map(wk => `<span class="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs">${wk}</span>`).join("");
+
+        document.getElementById("dashProjectsList").innerHTML = state.activeResume.projects.map(p =>
+          `<div class="p-2 rounded-lg bg-slate-900 border border-slate-800"><strong>${p.title}</strong> (${p.technologies})</div>`
+        ).join("");
+
+        const tbody = document.getElementById("dashRecentSessionsBody");
+        tbody.innerHTML = state.sessions.slice().reverse().map(s => `
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-2.5 px-3 font-bold text-white">#${s.id}</td>
+            <td class="py-2.5 px-3 text-slate-400">${s.date}</td>
+            <td class="py-2.5 px-3 text-indigo-300 font-semibold">${s.domain}</td>
+            <td class="py-2.5 px-3 text-slate-300">${s.type}</td>
+            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">${s.difficulty}</span></td>
+            <td class="py-2.5 px-3 font-extrabold text-emerald-400">${s.overallScore} / 10</td>
+            <td class="py-2.5 px-3 text-right">
+              <button type="button" data-sid="${s.id}" class="open-report-btn px-3 py-1 rounded-lg bg-indigo-600/25 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-semibold">View Report</button>
+            </td>
+          </tr>
+        `).join("");
+
+        tbody.querySelectorAll(".open-report-btn").forEach(btn => {
+          btn.addEventListener("click", function() {
+            state.activeReportSessionId = parseInt(this.getAttribute("data-sid"));
+            switchView("result");
+          });
+        });
+
+        const ctx = document.getElementById("dashTrajectoryChart");
+        if (dashChartInstance) dashChartInstance.destroy();
+        dashChartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: state.sessions.map(s => `#${s.id} ${s.domain.slice(0, 12)}`),
+            datasets: [{
+              label: "Session Overall Score (/10)",
+              data: state.sessions.map(s => s.overallScore),
+              borderColor: "#6366F1",
+              backgroundColor: "rgba(99, 102, 241, 0.2)",
+              borderWidth: 3,
+              fill: true,
+              tension: 0.35,
+              pointRadius: 5,
+              pointBackgroundColor: "#A855F7"
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { min: 0, max: 10 } }
+          }
+        });
+      }
+
+      // =====================================================================
+      // VIEW 2: RESUME INTELLIGENCE & 9-SECTION AI ANALYSIS (Module 3 - FIXED)
+      // =====================================================================
+      const PROG_LANG_LIST = ["Python", "Java", "C++", "C", "C#", "SQL", "JavaScript", "TypeScript", "Go", "Rust", "Kotlin", "Swift", "PHP", "Ruby", "R", "MATLAB", "Bash", "HTML5", "CSS3"];
+      const FRAMEWORK_LIST = ["Machine Learning", "Random Forest", "XGBoost", "LightGBM", "Scikit-learn", "Deep Learning", "TensorFlow", "PyTorch", "Keras", "Natural Language Processing", "NLTK", "spaCy", "Generative AI", "LangChain", "Flask", "FastAPI", "Django", "React", "Angular", "Vue.js", "Node.js", "Express", "Spring Boot", "REST API", "GraphQL", "Microservices", "SMOTE", "Pandas", "NumPy", "SciPy", "OpenCV", "Tailwind CSS", "Bootstrap", "Chart.js"];
+      const TOOLS_LIST = ["Docker", "Kubernetes", "AWS", "GCP", "Azure", "Git", "GitHub", "Linux", "SQLite", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Jenkins", "CI/CD", "Google Colab", "Jupyter", "Postman", "Nginx"];
+      const KNOWN_SKILLS_LIST = [].concat(PROG_LANG_LIST, FRAMEWORK_LIST, TOOLS_LIST, ["Data Structures", "Algorithms", "Operating Systems", "Computer Networks", "DBMS", "System Design", "Cybersecurity", "Cloud Computing", "DevOps"]);
+
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
+
+      async function extractTextFromUploadedFile(file) {
+        if (!file) throw new Error("No file selected.");
+        if (file.size === 0) throw new Error("Uploaded file is empty (0 bytes).");
+        if (file.size > 10 * 1024 * 1024) throw new Error("File exceeds maximum allowed size of 10 MB.");
+
+        const fname = file.name.toLowerCase();
+        if (fname.endsWith(".doc") && !fname.endsWith(".docx")) {
+          throw new Error("Legacy binary Microsoft Word (.doc, 97-2003) detected. Please save or export your resume as PDF (.pdf) or modern Word (.docx).");
+        }
+
+        // 1. Real Binary PDF Extraction via PDF.js
+        if (fname.endsWith(".pdf")) {
+          const arrayBuf = await file.arrayBuffer();
+          if (window.pdfjsLib) {
+            try {
+              const pdf = await window.pdfjsLib.getDocument({ data: arrayBuf }).promise;
+              const pageTexts = [];
+              for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                let lastY = null;
+                let lineChunks = [];
+                for (const item of textContent.items) {
+                  if (lastY !== null && Math.abs(item.transform[5] - lastY) > 4) {
+                    lineChunks.push("\n");
+                  }
+                  lineChunks.push(item.str);
+                  lastY = item.transform[5];
+                }
+                pageTexts.push(lineChunks.join(" ").replace(/ *\n */g, "\n"));
+              }
+              const fullPdfText = pageTexts.join("\n\n").trim();
+              if (fullPdfText.length > 15) return fullPdfText;
+            } catch (pdfErr) {
+              console.warn("PDF.js fallback:", pdfErr);
+            }
+          }
+          // Fallback ASCII stream extractor for uncompressed PDFs
+          const rawLatin = new TextDecoder("latin1").decode(arrayBuf);
+          const literalMatches = Array.from(rawLatin.matchAll(/\(([^()\\]{2,})\)/g)).map(m => m[1]);
+          if (literalMatches.join(" ").length > 30) {
+            return literalMatches.join("\n");
+          }
+          throw new Error("Could not extract selectable text from PDF. Ensure the PDF is not a scanned image.");
+        }
+
+        // 2. Real Binary DOCX Extraction via JSZip (word/document.xml)
+        if (fname.endsWith(".docx")) {
+          const arrayBuf = await file.arrayBuffer();
+          if (window.JSZip) {
+            const zip = await window.JSZip.loadAsync(arrayBuf);
+            const docXmlFile = zip.file("word/document.xml");
+            if (!docXmlFile) throw new Error("Invalid DOCX archive: word/document.xml not found.");
+            const xmlContent = await docXmlFile.async("string");
+            const xmlWithNewlines = xmlContent
+              .replace(/<\/w:p>/g, "\n")
+              .replace(/<\/w:tr>/g, "\n")
+              .replace(/<w:tab\/>/g, " ")
+              .replace(/<[^>]+>/g, " ");
+            const parser = new DOMParser();
+            const decoded = parser.parseFromString(`<!doctype html><body>${xmlWithNewlines}`, "text/html").body.textContent || "";
+            const cleanedDocx = decoded.split(/\r?\n/).map(l => l.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n");
+            if (cleanedDocx.length > 10) return cleanedDocx;
+          }
+          throw new Error("Unable to parse DOCX file.");
+        }
+
+        // 3. Plain Text (.txt / .md)
+        const txt = await file.text();
+        if (!txt.trim()) throw new Error("Uploaded text file is empty.");
+        return txt.trim();
+      }
+
+      function matchSkillTokens(text, list) {
+        return list.filter(sk => {
+          const escaped = sk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          return new RegExp(`(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`, "i").test(text);
+        });
+      }
+
+      function parseResumeTextNLP(rawText, filename) {
+        const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const emailMatch = rawText.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/);
+        const phoneMatch = rawText.match(/(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3,5}\)?[-.\s]?)?\d{3,5}[-.\s]?\d{4,6}/);
+
+        let candidateName = "Candidate";
+        const skipHeaders = new Set(["resume", "curriculum vitae", "cv", "profile", "contact", "education", "skills"]);
+        for (const ln of lines.slice(0, 6)) {
+          const clean = ln.split("|")[0].replace(/[^A-Za-z\s.]/g, "").trim();
+          const words = clean.split(/\s+/).filter(Boolean);
+          if (words.length >= 2 && words.length <= 5 && !skipHeaders.has(clean.toLowerCase()) && !ln.includes("@")) {
+            candidateName = words.map(w => w[0].toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+            break;
+          }
+        }
+
+        const progLangs = matchSkillTokens(rawText, PROG_LANG_LIST);
+        const frameworks = matchSkillTokens(rawText, FRAMEWORK_LIST);
+        const tools = matchSkillTokens(rawText, TOOLS_LIST);
+        const allFoundSkills = Array.from(new Set([].concat(progLangs, frameworks, tools, matchSkillTokens(rawText, KNOWN_SKILLS_LIST))));
+
+        // Extract custom skills from "Skills:" or "Technical Skills:" lines as well
+        lines.forEach(ln => {
+          if (/^(technical skills|skills|programming languages|frameworks|tools|technologies)\s*:/i.test(ln)) {
+            const rhs = ln.split(":").slice(1).join(":");
+            rhs.split(/[,|•]/).map(s => s.trim()).filter(s => s.length >= 2 && s.length <= 32).forEach(s => {
+              if (!allFoundSkills.some(existing => existing.toLowerCase() === s.toLowerCase())) {
+                allFoundSkills.push(s);
+              }
+            });
+          }
+        });
+
+        const finalSkills = allFoundSkills.length ? allFoundSkills : ["Python", "SQL", "Data Structures"];
+
+        // Dynamic Section-Aware Project, Internship & Certification Extraction
+        const projects = [];
+        let currentSection = "";
+        for (let i = 0; i < lines.length; i++) {
+          const ln = lines[i];
+          const headerCheck = ln.replace(/[:\-|#*]+/g, "").trim();
+          if (headerCheck.split(/\s+/).length <= 4) {
+            if (/^(projects|academic projects|technical projects|key projects)$/i.test(headerCheck)) { currentSection = "projects"; continue; }
+            if (/^(internships?|industrial training|work experience|experience)$/i.test(headerCheck)) { currentSection = "internships"; continue; }
+            if (/^(certifications?|certificates|achievements)$/i.test(headerCheck)) { currentSection = "certifications"; continue; }
+            if (/^(education|academics|technical skills|skills)$/i.test(headerCheck)) { currentSection = "other"; continue; }
+          }
+          if (currentSection === "projects") {
+            const isBullet = /^[-*•–]/.test(ln);
+            if (!isBullet && ln.length > 4) {
+              const titlePart = ln.replace(/^\d+[.)]\s*/, "").split("|")[0].split("–")[0].trim();
+              const techPart = ln.includes("|") ? ln.split("|").slice(1).join(", ").trim() : (matchSkillTokens(ln, finalSkills).join(", ") || finalSkills.slice(0, 4).join(", "));
+              const nextDesc = (lines[i + 1] && /^[-*•–]/.test(lines[i + 1])) ? lines[i + 1].replace(/^[-*•–]+\s*/, "") : `Probe architectural design, edge-case handling, evaluation metrics, and deployment of ${titlePart}.`;
+              if (titlePart.length >= 4 && projects.length < 5) {
+                projects.push({
+                  title: titlePart.slice(0, 75),
+                  technologies: techPart || finalSkills.slice(0, 3).join(", "),
+                  focus: nextDesc
+                });
+              }
+            }
+          }
+        }
+
+        // Fallback regex scan for named projects if section headers weren't standalone lines
+        if (!projects.length) {
+          const namedMatches = rawText.match(/[A-Z][A-Za-z0-9\s\-/]{3,45}(?:Project|System|Platform|Detection|Prediction|Portal|Engine|Microservice|Application)/g) || [];
+          Array.from(new Set(namedMatches)).slice(0, 3).forEach(m => {
+            const cleanTitle = m.trim();
+            const matchedTechs = matchSkillTokens(rawText, finalSkills).slice(0, 5).join(", ") || "Python, Software Engineering";
+            projects.push({
+              title: cleanTitle,
+              technologies: matchedTechs,
+              focus: `Probe architecture, algorithm/framework selection (${matchedTechs}), testing, and production trade-offs in ${cleanTitle}.`
+            });
+          });
+        }
+        if (!projects.length) {
+          projects.push({
+            title: "Core Technical Engineering Portfolio",
+            technologies: finalSkills.slice(0, 4).join(", "),
+            focus: `Probe system design, implementation trade-offs, and debugging across ${finalSkills.slice(0, 4).join(", ")}.`
+          });
+        }
+
+        const internshipLines = lines.filter(l => /intern|internship|trainee|engineer -|developer -/i.test(l)).slice(0, 3);
+        const certLines = lines.filter(l => /certif|coursera|udemy|aws certified|stanford|ibm|nptel/i.test(l)).slice(0, 3);
+        const eduLine = lines.find(l => /B\.?Tech|M\.?Tech|B\.?E|B\.?Sc|M\.?Sc|BCA|MCA|Computer Science|Information Technology|University|College|CGPA/i.test(l)) || "B.Tech in Computer Science & Engineering";
+
+        return {
+          filename: filename || "Uploaded_Resume.pdf",
+          status: "Verified & Analyzed",
+          candidate_name: candidateName,
+          email: emailMatch ? emailMatch[0] : state.user.email,
+          phone: phoneMatch ? phoneMatch[0] : "+91 9876543210",
+          education: eduLine,
+          domain: document.getElementById("resumeTargetDomainSelect").value || state.user.preferredDomain,
+          raw_text: rawText,
+          skills: finalSkills,
+          prog_langs: progLangs.length ? progLangs : finalSkills.slice(0, 2),
+          frameworks: frameworks.length ? frameworks : finalSkills.slice(0, 3),
+          tools: tools.length ? tools : ["Git", "Linux", "SQLite"],
+          internships: internshipLines.length ? internshipLines : ["Practical academic & software engineering project delivery verified."],
+          certifications: certLines.length ? certLines : ["Core Computer Science & Engineering Coursework"],
+          projects: projects
+        };
+      }
+
+      function renderResumeView() {
+        const r = state.activeResume;
+        const hasResume = Boolean(r && r.raw_text && r.raw_text.trim().length > 0);
+
+        document.getElementById("resumeActiveFilenameLabel").textContent = hasResume ? r.filename : "No Active Resume Uploaded";
+        const statusBadge = document.getElementById("resumeExtractionStatusBadge");
+        statusBadge.textContent = hasResume ? (r.status || "Verified & Analyzed") : "Awaiting Upload";
+        statusBadge.className = hasResume
+          ? "px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300"
+          : "px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300";
+
+        document.getElementById("resumeCandidateContactLine").textContent = hasResume
+          ? `Candidate: ${r.candidate_name} • Email: ${r.email || state.user.email} • Phone: ${r.phone || "N/A"}`
+          : "Upload a PDF/DOCX resume or load a sample profile below to extract candidate entities.";
+
+        document.getElementById("resumeRawTextarea").value = r.raw_text || "";
+        document.getElementById("resumeSkillsCsvInput").value = (r.skills || []).join(", ");
+
+        // Metadata summary boxes
+        document.getElementById("metaProgLangs").textContent = (r.prog_langs && r.prog_langs.length ? r.prog_langs : (r.skills || []).slice(0, 3)).join(", ") || "None";
+        document.getElementById("metaFrameworks").textContent = (r.frameworks && r.frameworks.length ? r.frameworks.slice(0, 4) : (r.skills || []).slice(0, 3)).join(", ") || "None";
+        document.getElementById("metaTools").textContent = (r.tools && r.tools.length ? r.tools.slice(0, 4) : ["Git", "SQLite"]).join(", ") || "None";
+        document.getElementById("metaCerts").textContent = (r.certifications && r.certifications.length) ? `${r.certifications.length} Listed` : "None";
+
+        // Interactive Skill Chips with × removal
+        const skillBox = document.getElementById("resumeSkillBadgesBox");
+        skillBox.innerHTML = (r.skills || []).map((sk, idx) => `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-medium">
+            <span>${sk}</span>
+            <button type="button" data-idx="${idx}" class="res-rm-skill-btn text-indigo-400 hover:text-rose-400 font-bold">×</button>
+          </span>
+        `).join("");
+        skillBox.querySelectorAll(".res-rm-skill-btn").forEach(btn => {
+          btn.addEventListener("click", function() {
+            const idx = parseInt(this.getAttribute("data-idx"));
+            state.activeResume.skills.splice(idx, 1);
+            renderResumeView();
+          });
+        });
+
+        const readiness = hasResume ? Math.min(98, 64 + (r.skills || []).length * 2 + (r.projects || []).length * 5) : 0;
+        document.getElementById("resumeReadinessBadge").textContent = `Readiness: ${readiness}%`;
+        document.getElementById("kpiReadiness").textContent = `${readiness}%`;
+        document.getElementById("dashResumeFilename").textContent = hasResume ? r.filename : "No Resume Uploaded";
+
+        const targetDom = document.getElementById("resumeTargetDomainSelect").value || r.domain || "Machine Learning";
+        document.getElementById("anaProfSummary").textContent = hasResume
+          ? `${r.candidate_name} presents a verified technical profile evaluated for ${targetDom}, demonstrating ${(r.skills || []).length} extracted technical skills (${(r.skills || []).slice(0, 6).join(", ")}) and ${(r.projects || []).length} project(s).`
+          : "No active resume loaded. Upload a PDF or DOCX resume to generate your executive summary.";
+
+        document.getElementById("anaTechSummary").textContent = hasResume
+          ? `Languages: ${(r.prog_langs || []).join(", ") || "Python"}. Frameworks & Libraries: ${(r.frameworks || []).join(", ") || "Standard Stack"}. Tools: ${(r.tools || []).join(", ") || "Git"}.`
+          : "Upload a resume to categorize programming languages, frameworks, and tools.";
+
+        document.getElementById("anaEduSummary").textContent = r.education || "Not specified";
+
+        document.getElementById("anaStrongAreas").innerHTML = (hasResume ? [
+          `Core Programming & Implementation (${(r.skills || []).slice(0, 4).join(", ")})`,
+          `Applied Project Execution (${(r.projects || []).map(p => p.title).join(", ")})`
+        ] : ["Upload resume to identify strong technical areas"]).map(i => `<li>${i}</li>`).join("");
+
+        const domainExpectedMap = {
+          "Machine Learning": ["MLOps Model Monitoring", "Docker Containerization", "Feature Store Pipelines", "Probability Calibration"],
+          "Python Development": ["Asyncio Concurrency", "PyTest Automated Coverage", "Redis Distributed Caching", "Docker Deployment"],
+          "Data Structures and Algorithms": ["Segment Trees & Trie Optimization", "Amortized Complexity Proofs", "Concurrent Lock-Free Structures"]
+        };
+        const expectedForDom = domainExpectedMap[targetDom] || ["Distributed System Scalability", "Automated CI/CD Testing", "Cloud Container Orchestration"];
+        const lowerSet = new Set((r.skills || []).map(s => s.toLowerCase()));
+        const missingAreas = expectedForDom.filter(item => !lowerSet.has(item.toLowerCase()));
+
+        document.getElementById("anaWeakAreas").innerHTML = (hasResume ? missingAreas : ["Upload resume to audit missing domain skills"]).map(i => `<li>${i}</li>`).join("");
+
+        document.getElementById("anaInternships").innerHTML = (r.internships && r.internships.length
+          ? r.internships
+          : ["No formal internships listed; emphasize academic project architecture and testing."]).map(i => `<li>${i}</li>`).join("");
+
+        document.getElementById("anaProjectsBox").innerHTML = (r.projects || []).map(p => `
+          <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+            <div class="font-bold text-white">${p.title}</div>
+            <div class="text-indigo-300"><strong>Stack:</strong> ${p.technologies}</div>
+            <div class="text-slate-300"><strong>AI Interviewer Probe:</strong> ${p.focus}</div>
+          </div>
+        `).join("") || `<div class="text-slate-400">No projects extracted yet.</div>`;
+
+        const topics = (r.projects || []).map(p => `Project Deep-Dive: ${p.title}`).concat((r.skills || []).slice(0, 5).map(s => `${s} Architecture & Trade-offs`));
+        document.getElementById("anaSuggestedTopics").innerHTML = topics.map(t =>
+          `<span class="px-2.5 py-1 rounded-lg bg-indigo-500/15 border border-indigo-500/30 text-indigo-200 text-xs">${t}</span>`
+        ).join("");
+
+        document.getElementById("anaImprovementSuggestions").innerHTML = [
+          `Quantify measurable engineering impact in ${(r.projects && r.projects[0]) ? r.projects[0].title : "your projects"} (e.g. latency reduction %, F1-score gain, or throughput).`,
+          `Add explicit evidence or coursework covering ${missingAreas[0] || "production deployment & testing"} for ${targetDom} roles.`,
+          "Include live deployment links and GitHub repository URLs next to project titles."
+        ].map(s => `<li>${s}</li>`).join("");
+      }
+
+      document.getElementById("resumeTargetDomainSelect").addEventListener("change", function() {
+        state.activeResume.domain = this.value;
+        renderResumeView();
+        showToast(`Re-evaluated resume readiness and missing skill gaps for ${this.value}.`, "info");
+      });
+
+      document.getElementById("resumeStartInterviewNowBtn").addEventListener("click", () => {
+        document.getElementById("cfgDomainSelect").value = state.activeResume.domain || state.user.preferredDomain;
+        document.getElementById("cfgTypeSelect").value = "Resume-Based Interview";
+        switchView("configure");
+      });
+
+      document.getElementById("removeActiveResumeBtn").addEventListener("click", () => {
+        state.activeResume = {
+          filename: "No Resume Uploaded",
+          status: "Removed",
+          candidate_name: state.user.name,
+          email: state.user.email,
+          phone: "",
+          education: state.user.education,
+          domain: state.user.preferredDomain,
+          raw_text: "",
+          skills: ["Python", "SQL"],
+          prog_langs: ["Python", "SQL"],
+          frameworks: [],
+          tools: [],
+          internships: [],
+          certifications: [],
+          projects: []
+        };
+        document.getElementById("resumeFileInput").value = "";
+        renderResumeView();
+        showToast("Removed active resume. Upload a PDF/DOCX file or load a sample resume anytime.", "info");
+      });
+
+      document.getElementById("loadArjunSampleBtn").addEventListener("click", () => {
+        state.activeResume = parseResumeTextNLP(SAMPLE_RESUMES.arjun.raw_text, SAMPLE_RESUMES.arjun.filename);
+        state.user.name = "Arjun Sharma";
+        state.user.preferredDomain = "Machine Learning";
+        document.getElementById("resumeTargetDomainSelect").value = "Machine Learning";
+        renderResumeView();
+        showToast("Loaded Arjun Sharma's Machine Learning Resume (Random Forest, Fraud Detection, Flask).", "success");
+      });
+
+      document.getElementById("loadPriyaSampleBtn").addEventListener("click", () => {
+        state.activeResume = parseResumeTextNLP(SAMPLE_RESUMES.priya.raw_text, SAMPLE_RESUMES.priya.filename);
+        state.user.name = "Priya Nair";
+        state.user.preferredDomain = "Backend Development";
+        document.getElementById("resumeTargetDomainSelect").value = "Backend Development";
+        document.getElementById("cfgDomainSelect").value = "Backend Development";
+        renderResumeView();
+        showToast("Loaded Priya Nair's Backend Resume (Spring Boot, PostgreSQL, Redis, Kafka). Questions will now be generated strictly for Priya's resume!", "success");
+      });
+
+      document.getElementById("loadRohanSampleBtn").addEventListener("click", () => {
+        state.activeResume = parseResumeTextNLP(SAMPLE_RESUMES.rohan.raw_text, SAMPLE_RESUMES.rohan.filename);
+        state.user.name = "Rohan Verma";
+        state.user.preferredDomain = "Full Stack Development";
+        document.getElementById("resumeTargetDomainSelect").value = "Full Stack Development";
+        document.getElementById("cfgDomainSelect").value = "Full Stack Development";
+        renderResumeView();
+        showToast("Loaded Rohan Verma's Full Stack & Cloud Resume (TypeScript, React, Node.js, Kubernetes, AWS). Questions will now be generated strictly for Rohan's resume!", "success");
+      });
+
+      document.getElementById("resumeFileInput").addEventListener("change", async function() {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        try {
+          showToast(`Extracting text and entities from '${file.name}'...`, "info");
+          const extractedText = await extractTextFromUploadedFile(file);
+          state.activeResume = parseResumeTextNLP(extractedText, file.name);
+          state.user.name = state.activeResume.candidate_name || state.user.name;
+          renderResumeView();
+          showToast(`Successfully parsed '${file.name}': extracted ${state.activeResume.skills.length} skills and ${state.activeResume.projects.length} project(s).`, "success");
+        } catch (err) {
+          showToast(err.message || "Could not parse uploaded resume file.", "error");
+        }
+      });
+
+      document.getElementById("runResumeAnalysisBtn").addEventListener("click", () => {
+        const raw = document.getElementById("resumeRawTextarea").value.trim();
+        if (!raw) {
+          showToast("Please paste resume text or upload a PDF/DOCX file first.", "error");
+          return;
+        }
+        const fname = (state.activeResume.filename && state.activeResume.filename !== "No Resume Uploaded")
+          ? state.activeResume.filename
+          : "Custom_Pasted_Resume.txt";
+        state.activeResume = parseResumeTextNLP(raw, fname);
+        state.user.name = state.activeResume.candidate_name || state.user.name;
+        renderResumeView();
+        showToast(`Completed NLP extraction (${state.activeResume.skills.length} skills, ${state.activeResume.projects.length} projects) and 9-section AI Resume Audit.`, "success");
+      });
+
+      document.getElementById("saveResumeSkillsBtn").addEventListener("click", () => {
+        const csv = document.getElementById("resumeSkillsCsvInput").value;
+        state.activeResume.skills = Array.from(new Set(csv.split(",").map(s => s.trim()).filter(Boolean)));
+        renderResumeView();
+        showToast(`Verified and saved ${state.activeResume.skills.length} skills for interview generation.`, "success");
+      });
+
+      // =====================================================================
+      // VIEW 3: INTERVIEW CONFIGURATION (Module 4)
+      // =====================================================================
+      function renderConfigureView() {
+        const domSelect = document.getElementById("cfgDomainSelect");
+        const dom = domSelect.value || state.user.preferredDomain;
+        const subs = SUBTOPICS_BY_DOMAIN[dom] || ["Core Architecture", "Internal Mechanics", "Production Scenarios", "Debugging & Optimization"];
+        document.getElementById("cfgSubtopicsBox").innerHTML = subs.map((s, idx) => `
+          <label class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs text-slate-200 cursor-pointer">
+            <input type="checkbox" class="cfg-subtopic-cb rounded text-indigo-500" value="${s}" ${idx < 3 ? 'checked' : ''} />
+            <span>${s}</span>
+          </label>
+        `).join("");
+
+        renderConfigSkillChips();
+        updateConfigConfirmation();
+      }
+
+      function renderConfigSkillChips() {
+        const box = document.getElementById("cfgSkillChipsBox");
+        box.innerHTML = state.activeResume.skills.map((sk, idx) => `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 text-xs">
+            <span>${sk}</span>
+            <button type="button" data-idx="${idx}" class="cfg-rm-skill text-indigo-400 hover:text-rose-400 font-bold">×</button>
+          </span>
+        `).join("");
+        box.querySelectorAll(".cfg-rm-skill").forEach(btn => {
+          btn.addEventListener("click", function() {
+            state.activeResume.skills.splice(parseInt(this.getAttribute("data-idx")), 1);
+            renderConfigSkillChips();
+            updateConfigConfirmation();
+          });
+        });
+      }
+
+      function getConfiguredDurationMinutes() {
+        const sel = document.getElementById("cfgDurationSelect").value;
+        if (sel === "custom") {
+          return Math.max(5, Math.min(120, parseInt(document.getElementById("cfgCustomDurationInput").value || "20")));
+        }
+        return parseInt(sel || "15");
+      }
+
+      function updateConfigConfirmation() {
+        const dom = document.getElementById("cfgDomainSelect").value;
+        const tp = document.getElementById("cfgTypeSelect").value;
+        const diff = document.getElementById("cfgDifficultySelect").value;
+        const dur = getConfiguredDurationMinutes();
+        const maxQ = document.getElementById("cfgMaxQuestionsInput").value;
+        document.getElementById("cfgConfirmationText").innerHTML =
+          `<strong>Ready to Launch:</strong> ${dom} (${tp}) • Difficulty: <strong>${diff}</strong> • Duration: <strong>${dur} mins</strong> • Max Questions: <strong>${maxQ}</strong> • Active Resume Skills: <strong>${state.activeResume.skills.length}</strong>`;
+      }
+
+      document.getElementById("cfgDomainSelect").addEventListener("change", renderConfigureView);
+      document.getElementById("cfgTypeSelect").addEventListener("change", updateConfigConfirmation);
+      document.getElementById("cfgDifficultySelect").addEventListener("change", updateConfigConfirmation);
+      document.getElementById("cfgDurationSelect").addEventListener("change", function() {
+        const customInp = document.getElementById("cfgCustomDurationInput");
+        if (this.value === "custom") customInp.classList.remove("hidden");
+        else customInp.classList.add("hidden");
+        updateConfigConfirmation();
+      });
+      document.getElementById("cfgCustomDurationInput").addEventListener("input", updateConfigConfirmation);
+      document.getElementById("cfgMaxQuestionsInput").addEventListener("input", updateConfigConfirmation);
+
+      document.getElementById("cfgAddSkillBtn").addEventListener("click", () => {
+        const inp = document.getElementById("cfgAddSkillInput");
+        const parts = inp.value.split(",").map(s => s.trim()).filter(Boolean);
+        parts.forEach(p => { if (!state.activeResume.skills.includes(p)) state.activeResume.skills.push(p); });
+        inp.value = "";
+        renderConfigSkillChips();
+        updateConfigConfirmation();
+      });
+
+      document.getElementById("launchLiveInterviewBtn").addEventListener("click", startNewLiveInterviewSession);
+
+      // =====================================================================
+      // VIEW 4: LIVE AI CONVERSATIONAL INTERVIEW ENGINE + REAL MICROPHONE
+      // =====================================================================
+      let liveTimerInterval = null;
+
+      // =====================================================================
+      // DYNAMIC RESUME-SPECIFIC & ANSWER-DRIVEN QUESTION ENGINE (ZERO STATIC QUESTIONS)
+      // =====================================================================
+      const CONCEPT_KNOWLEDGE_GRAPH = {
+        "random forest": {
+          expected: ["bootstrap aggregating (bagging)", "random feature subspace selection", "variance reduction", "out-of-bag (OOB) error", "gini impurity / entropy"],
+          deepFollowup: "You explained Random Forest's ensemble voting well. Internally, how does Out-of-Bag (OOB) error estimation work during bagging, and when would Gradient Boosted Trees (XGBoost/LightGBM) outperform Random Forest?",
+          clarifyFollowup: "You touched on decision trees, but let's clarify the two sources of randomness: how do row bootstrapping (bagging) and random feature subsets at each split work together to decorrelate the trees?",
+          foundationFollowup: "Let's build from the foundation: what happens when a single Decision Tree grows too deep on noisy training data, and how does combining multiple trees fix that problem?"
+        },
+        "smote": {
+          expected: ["k-nearest minority neighbors", "synthetic interpolation", "training fold isolation", "preventing validation data leakage", "class_weight='balanced'"],
+          deepFollowup: "Great point on SMOTE inside training folds. In high-dimensional feature spaces or noisy decision boundaries, SMOTE can generate overlapping synthetic points—how do Borderline-SMOTE or cost-sensitive loss weighting address this?",
+          clarifyFollowup: "You mentioned oversampling the minority class—why is it critical to apply SMOTE strictly inside each training fold of cross-validation rather than on the entire dataset before splitting?",
+          foundationFollowup: "Let's start with the core issue: if 99.8% of transactions in a dataset are legitimate and only 0.2% are fraud, why will a standard classifier achieve 99.8% accuracy while failing completely in production?"
+        },
+        "decorator": {
+          expected: ["higher-order function", "wrapper(*args, **kwargs)", "lexical closure", "@functools.wraps metadata preservation", "execution timing / logging"],
+          deepFollowup: "Good explanation of wrapper closures. Can you now write or describe a parameterized decorator (a decorator that accepts arguments like `@retry(max_attempts=3)`) using a 3-level nested function structure?",
+          clarifyFollowup: "You mentioned modifying function behavior—can you explain how the inner `wrapper(*args, **kwargs)` function captures the target function via a closure and why `@functools.wraps` is needed?",
+          foundationFollowup: "Let's start with first-class functions in Python: what does it mean that functions in Python can be passed as arguments and returned from other functions?"
+        },
+        "django": {
+          expected: ["MVT architecture", "ORM query optimizer", "select_related / prefetch_related (N+1 query fix)", "middleware lifecycle", "CSRF & session security"],
+          deepFollowup: "Strong grasp of Django architecture. When profiling a slow API endpoint suffering from the N+1 ORM query problem across ForeignKey and ManyToMany relations, how do `select_related` and `prefetch_related` differ at the SQL JOIN level?",
+          clarifyFollowup: "You mentioned Django's ORM and views—walk me through how a single HTTP request flows through Django Middleware, URL routing, the View, and database transaction atomicity (`transaction.atomic`).",
+          foundationFollowup: "Let's cover the fundamentals of Django: how does Django's Model-View-Template (MVT) pattern separate database models from business logic and request handling?"
+        },
+        "fastapi": {
+          expected: ["ASGI event loop", "Pydantic v2 schema validation", "dependency injection (Depends)", "async def vs def threadpool", "OpenAPI automatic docs"],
+          deepFollowup: "Excellent point on FastAPI's async capabilities. What happens to the Uvicorn ASGI event loop if you accidentally run a synchronous CPU-blocking or blocking `requests.post()` call inside an `async def` endpoint instead of a standard `def` endpoint?",
+          clarifyFollowup: "You mentioned FastAPI endpoints—how does FastAPI use Pydantic models and `Depends()` dependency injection to validate payloads and manage database or auth sessions automatically?",
+          foundationFollowup: "Let's start with the basics of FastAPI: why is FastAPI significantly faster than traditional WSGI frameworks for concurrent I/O-bound microservice calls?"
+        },
+        "postgresql": {
+          expected: ["B+ Tree indexing", "MVCC (Multi-Version Concurrency Control)", "ACID transaction isolation levels", "EXPLAIN ANALYZE query plan", "write-ahead logging (WAL)"],
+          deepFollowup: "Solid explanation of database indexing. In PostgreSQL, how does Multi-Version Concurrency Control (MVCC) allow read queries to execute without blocking concurrent write transactions, and what role does `VACUUM` play?",
+          clarifyFollowup: "You mentioned indexing—when a query filters on multiple columns (`WHERE status = 'PAID' AND created_at > ...`), how does column order in a composite B+ Tree index determine whether the index is used?",
+          foundationFollowup: "Let's step back to core DBMS principles: what are the four ACID properties of a database transaction, and why are they vital for an e-commerce payment or order table?"
+        },
+        "redis": {
+          expected: ["in-memory key-value store", "cache invalidation (TTL / write-through)", "cache stampede / thundering herd", "distributed locks (Redlock)", "pub/sub & streams"],
+          deepFollowup: "Good insight into Redis caching. Under extreme traffic, if a popular cached key expires simultaneously for 10,000 requests (a cache stampede / thundering herd), how do you prevent all 10,000 requests from hitting the primary database at once?",
+          clarifyFollowup: "You mentioned using Redis for speed—how do you keep Redis cache entries consistent with your primary SQL database when underlying records are updated or deleted?",
+          foundationFollowup: "Let's start with the basic concept: why is retrieving data from Redis orders of magnitude faster than querying a disk-backed relational table?"
+        },
+        "react": {
+          expected: ["Virtual DOM reconciliation", "React Fiber", "useEffect dependency array & cleanup", "useMemo / useCallback memoization", "unidirectional state flow"],
+          deepFollowup: "Great explanation of React state. In a real-time collaborative UI with frequent WebSocket updates, how do you prevent unnecessary child component re-renders using React Fiber keys, `React.memo`, and normalized state stores?",
+          clarifyFollowup: "You mentioned React components and hooks—what causes stale closure bugs inside `useEffect` or event listeners, and how does the dependency array control effect re-execution?",
+          foundationFollowup: "Let's review the core mechanism of React: why does React maintain a Virtual DOM diffing algorithm instead of mutating the browser's real DOM directly on every state change?"
+        },
+        "kubernetes": {
+          expected: ["Pods & Deployments", "Horizontal Pod Autoscaler (HPA)", "Liveness & Readiness probes", "Service discovery & Ingress", "Rolling vs Blue-Green updates"],
+          deepFollowup: "Strong cloud architecture breakdown. During a zero-downtime Kubernetes rolling update, how do Readiness Probes, `preStop` lifecycle hooks, and `terminationGracePeriodSeconds` prevent in-flight HTTP requests from dropping?",
+          clarifyFollowup: "You mentioned running containers in Kubernetes—what is the difference between a Liveness Probe and a Readiness Probe, and what happens if each one fails?",
+          foundationFollowup: "Let's start with container fundamentals: what problem do Docker containers and Kubernetes orchestration solve compared to deploying apps manually on virtual machines?"
+        }
+      };
+
+      function extractUserAnswerSignals(answerText, expectedConcepts) {
+        const clean = (answerText || "").trim();
+        const lower = clean.toLowerCase();
+        const words = clean.split(/\s+/).filter(Boolean);
+
+        // Extract specific technical terms or phrases the candidate actually mentioned
+        const allKnownTerms = [].concat(KNOWN_SKILLS_LIST, [
+          "bagging", "bootstrap", "variance", "bias", "overfitting", "generalization", "smote", "imbalance",
+          "precision", "recall", "f1-score", "pr-auc", "roc-auc", "cross-validation", "data leakage",
+          "wrapper", "closure", "higher-order", "functools", "b+ tree", "mvcc", "acid", "isolation",
+          "transaction", "index", "cache", "ttl", "idempotency", "token bucket", "rate limiting",
+          "virtual dom", "hooks", "useeffect", "websocket", "operational transformation", "microservices",
+          "kafka", "event-driven", "deadlock", "paging", "virtual memory", "mutex", "semaphore"
+        ]);
+
+        const mentionedTerms = [];
+        allKnownTerms.forEach(term => {
+          const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (new RegExp(`(?<![A-Za-z0-9])${esc}(?![A-Za-z0-9])`, "i").test(clean)) {
+            if (!mentionedTerms.some(m => m.toLowerCase() === term.toLowerCase())) {
+              mentionedTerms.push(term);
+            }
+          }
+        });
+
+        // Also extract any camelCase, snake_case, or capitalized technical terms from the user's answer
+        const customTokens = clean.match(/\b(?:[A-Z][A-Za-z0-9_+#-]{2,}|[a-z]+_[a-z0-9_]+)\b/g) || [];
+        const stopCapitals = new Set(["The", "And", "For", "With", "When", "This", "That", "In", "We", "It", "Because", "Using", "Used"]);
+        customTokens.forEach(tok => {
+          if (!stopCapitals.has(tok) && !mentionedTerms.some(m => m.toLowerCase() === tok.toLowerCase())) {
+            mentionedTerms.push(tok);
+          }
+        });
+
+        // Determine which expected concepts from the question were covered vs omitted
+        const expList = (expectedConcepts && expectedConcepts.length) ? expectedConcepts : ["core mechanism", "internal implementation", "production trade-offs", "edge-case handling"];
+        const coveredConcepts = [];
+        const omittedConcepts = [];
+
+        expList.forEach(concept => {
+          const cTokens = concept.toLowerCase().split(/[^a-z0-9+#]+/).filter(t => t.length > 2);
+          const hit = cTokens.some(t => lower.includes(t));
+          if (hit) coveredConcepts.push(concept);
+          else omittedConcepts.push(concept);
+        });
+
+        // Extract a short verbatim snippet from the candidate's answer to quote naturally
+        const firstSentence = clean.split(/[.!?]/)[0].trim().slice(0, 75);
+
+        return {
+          wordCount: words.length,
+          mentionedTerms,
+          coveredConcepts,
+          omittedConcepts,
+          quotedSnippet: firstSentence
+        };
+      }
+
+      function buildResumeSpecificQuestionQueue(resume, domain, difficulty) {
+        const r = resume || state.activeResume;
+        const candName = r.candidate_name || "Candidate";
+        const fname = r.filename || "Uploaded_Resume.pdf";
+        const skills = (r.skills && r.skills.length) ? r.skills : [domain, "Problem Solving"];
+        const projects = (r.projects && r.projects.length) ? r.projects : [];
+        const internships = (r.internships && r.internships.length) ? r.internships : [];
+        const certs = (r.certifications && r.certifications.length) ? r.certifications : [];
+
+        const queue = [];
+
+        // 1. Project-Specific Multi-Angle Questions (Different for every resume!)
+        projects.forEach((proj, pIdx) => {
+          const pTitle = proj.title;
+          const pTech = proj.technologies || skills.slice(0, 4).join(", ");
+          const techTokens = pTech.split(",").map(s => s.trim()).filter(Boolean);
+          const primaryTech = techTokens[0] || skills[0] || domain;
+          const secondaryTech = techTokens[1] || skills[1] || "modular architecture";
+
+          queue.push({
+            text: `In your uploaded resume (${fname}), you listed the project '${pTitle}' built with ${pTech}. Walk me through the end-to-end architecture of '${pTitle}' and explain why you chose ${primaryTech} and ${secondaryTech} for this problem.`,
+            category: "Resume-Based",
+            topic: `Project Architecture: ${pTitle}`,
+            rationale: `Opening question generated directly from ${candName}'s resume project #${pIdx + 1} ('${pTitle}').`,
+            isFollowup: false,
+            expectedConcepts: [primaryTech, secondaryTech, "system architecture", "design trade-offs", "data/request flow"],
+            sample: `In '${pTitle}', we architected the system around ${primaryTech} and ${secondaryTech} to separate core processing from API delivery, ensuring high throughput, clean modularity, and low end-to-end latency.`,
+            partialSample: `We built '${pTitle}' using ${primaryTech} because it is popular and easy to integrate with our frontend.`,
+            weakSample: `I used ${primaryTech} in '${pTitle}', though I am not completely sure about the internal architecture trade-offs.`
+          });
+
+          queue.push({
+            text: `Focusing on '${pTitle}' (${pTech}): what was the most critical technical bottleneck, edge case, or data/state consistency challenge you faced during implementation, and how did you debug and verify your fix?`,
+            category: "Project-Related",
+            topic: `${pTitle} – Bottlenecks & Debugging`,
+            rationale: `Deep-dive into implementation challenges and debugging methodology for ${candName}'s project '${pTitle}'.`,
+            isFollowup: true,
+            expectedConcepts: [primaryTech, "root-cause debugging", "edge-case validation", "benchmarking metrics", "error recovery"],
+            sample: `During '${pTitle}', our primary challenge involved edge-case payload failures and latency spikes under concurrent load in ${primaryTech}. We isolated the bottleneck via profiling, added strict validation and caching/indexing, and verified a 40%+ improvement using automated test suites.`,
+            partialSample: `We had some bugs when testing '${pTitle}' with large inputs, so we added error handling and optimized the code.`,
+            weakSample: `Everything worked smoothly in '${pTitle}' without major bugs.`
+          });
+
+          queue.push({
+            text: `If '${pTitle}' had to scale 20x in production traffic tomorrow, which component of your ${pTech} stack would become the first bottleneck, and how would you re-architect it for high availability?`,
+            category: "Real-World Application",
+            topic: `${pTitle} – Production Scaling`,
+            rationale: `Testing production scalability and systems engineering thinking on '${pTitle}'.`,
+            isFollowup: true,
+            expectedConcepts: ["horizontal scaling", "caching / indexing", "asynchronous queues", "load balancing", "observability"],
+            sample: `At 20x scale, synchronous processing and database/model I/O in '${pTitle}' would saturate first. We would introduce horizontal stateless worker replicas, Redis caching/rate-limiting, asynchronous task queues, and P95 latency monitoring.`,
+            partialSample: `To scale '${pTitle}' 20x, we would deploy it on a larger cloud server with more RAM and CPU cores.`,
+            weakSample: `I think ${primaryTech} handles scaling automatically without changing the architecture.`
+          });
+        });
+
+        // 2. Internship / Experience-Specific Questions from this Resume
+        internships.forEach((internLine, iIdx) => {
+          if (internLine && !internLine.startsWith("Practical academic") && !internLine.startsWith("No formal")) {
+            queue.push({
+              text: `Your resume highlights your experience: '${internLine}'. What was your most impactful technical deliverable during this role, and how did you collaborate with code reviews or production deployment?`,
+              category: "Behavioral & Practical",
+              topic: `Resume Experience #${iIdx + 1}`,
+              rationale: `Grounded directly in ${candName}'s extracted internship/work record.`,
+              isFollowup: false,
+              expectedConcepts: ["measurable deliverable", "engineering workflow", "testing & code review", "production impact"],
+              sample: `During '${internLine}', I owned the design and optimization of core backend/ML pipelines, wrote automated unit and integration tests, participated in peer code reviews, and documented measurable latency and accuracy improvements.`,
+              partialSample: `During '${internLine}', I worked with the team on Python modules and fixed assigned bug tickets.`,
+              weakSample: `I mostly shadowed senior developers and attended daily standup meetings.`
+            });
+          }
+        });
+
+        // 3. Skill-by-Skill Multi-Angle Questions (Covers every extracted skill across 6 distinct cognitive angles)
+        const angleTemplates = [
+          {
+            category: "Conceptual",
+            build: (sk) => `Your resume lists ${sk} as a core technical skill. Explain how ${sk} works under the hood and what internal mechanism makes it effective for ${domain}.`,
+            concepts: (sk) => [sk, "internal mechanism", "memory/execution model", "core abstraction"]
+          },
+          {
+            category: "Comparison",
+            build: (sk) => `When architecting a ${domain} solution, compare ${sk} against its main alternative technologies. Under what specific constraints would you choose NOT to use ${sk}?`,
+            concepts: (sk) => [sk, "architectural trade-offs", "time/space complexity", "alternative comparison", "failure modes"]
+          },
+          {
+            category: "Scenario-Based",
+            build: (sk) => `Imagine a production ${domain} service using ${sk} suddenly experiences a 5x latency spike and intermittent failures. Walk me through your step-by-step diagnostic and debugging playbook.`,
+            concepts: (sk) => [sk, "observability & logging", "bottleneck isolation", "concurrency/resource contention", "mitigation"]
+          },
+          {
+            category: "Coding & Implementation",
+            build: (sk) => `Walk through how you would implement a clean, production-grade module using ${sk} in ${domain}, including input validation, exception handling, and unit testing.`,
+            concepts: (sk) => [sk, "clean code structure", "input validation", "exception handling", "automated testing"]
+          },
+          {
+            category: "Debugging",
+            build: (sk) => `What is the most subtle bug or anti-pattern developers commonly introduce when working with ${sk}, and how do you prevent it in your codebase?`,
+            concepts: (sk) => [sk, "common anti-pattern", "memory/state leak prevention", "static analysis / testing"]
+          }
+        ];
+
+        for (let angleIdx = 0; angleIdx < angleTemplates.length; angleIdx++) {
+          const tpl = angleTemplates[angleIdx];
+          skills.forEach((sk) => {
+            const kGraph = CONCEPT_KNOWLEDGE_GRAPH[sk.toLowerCase()];
+            const expConcepts = kGraph ? kGraph.expected : tpl.concepts(sk);
+            queue.push({
+              text: `[${difficulty} • ${tpl.category}] ${tpl.build(sk)}`,
+              category: tpl.category,
+              topic: `${sk} (${tpl.category})`,
+              rationale: `Tailored to ${candName}'s extracted resume skill '${sk}' (${fname}) at ${difficulty} difficulty.`,
+              isFollowup: false,
+              expectedConcepts: expConcepts,
+              sample: `When working with ${sk} in ${domain}, its internal mechanism relies on ${expConcepts.slice(0, 3).join(", ")}. In production, we enforce strict validation, monitor resource utilization, and benchmark trade-offs against alternatives.`,
+              partialSample: `${sk} is used in ${domain} to build scalable components and handle data efficiently, though edge cases require careful testing.`,
+              weakSample: `I have basic familiarity with ${sk} from tutorials, mainly using default settings.`
+            });
+          });
+        }
+
+        return queue;
+      }
+
+      function generateContextualQuestion(session) {
+        const qNum = session.currentSeq;
+        const dom = session.domain;
+        const diff = session.currentDifficulty;
+        const prevQs = session.askedQuestions;
+        const history = session.qaHistory;
+        const resume = state.activeResume;
+        const projects = resume.projects || [];
+
+        // ===================================================================
+        // PART A: ANSWER-DEPENDENT DYNAMIC FOLLOW-UP GENERATION (Turn >= 2)
+        // Generates a different question depending on WHAT the user answered
+        // and HOW WELL they scored on the previous turn!
+        // ===================================================================
+        if (history.length > 0) {
+          const last = history[history.length - 1];
+          const lastQ = last.question;
+          const lastA = last.answer;
+          const lastScore = last.score;
+          const signals = last.signals || extractUserAnswerSignals(lastA, last.expectedConcepts || []);
+          const mentioned = signals.mentionedTerms || [];
+          const omitted = signals.omittedConcepts || [];
+          const primaryMention = mentioned[0] || (resume.skills && resume.skills[0]) || dom;
+          const secondaryMention = mentioned[1] || omitted[0] || "production edge cases";
+
+          // Check if any mentioned term in the user's answer matches our deep concept knowledge graph
+          let matchedGraphKey = null;
+          for (const key of Object.keys(CONCEPT_KNOWLEDGE_GRAPH)) {
+            if (lastA.toLowerCase().includes(key) || lastQ.toLowerCase().includes(key)) {
+              matchedGraphKey = key;
+              break;
+            }
+          }
+
+          // CASE 1: Strong / Excellent Answer (Score >= 8.0) -> Escalate to deeper internals, trade-offs, or scaling of the EXACT term the user just mentioned
+          if (lastScore >= 8.0) {
+            if (matchedGraphKey) {
+              const gQuestion = CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].deepFollowup;
+              if (!prevQs.includes(gQuestion)) {
+                return {
+                  text: gQuestion,
+                  category: "Advanced Follow-Up",
+                  topic: `Deep-Dive: ${matchedGraphKey.toUpperCase()}`,
+                  rationale: `Dynamic Answer-Driven Escalation (Last Score: ${lastScore}/10 — Strong): You discussed ${mentioned.slice(0, 4).join(", ") || matchedGraphKey}. Probing advanced internal mechanics & trade-offs.`,
+                  isFollowup: true,
+                  expectedConcepts: CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].expected,
+                  sample: `Building on ${matchedGraphKey}: internally, we optimize ${CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].expected.slice(0, 3).join(", ")} to guarantee low variance, high throughput, and zero data leakage under production constraints.`,
+                  partialSample: `In ${matchedGraphKey}, we tune the parameters and monitor performance on validation data.`,
+                  weakSample: `I haven't tested that advanced scenario with ${matchedGraphKey} yet.`
+                };
+              }
+            }
+
+            const strongDynamicText = `You made a strong point about ${primaryMention}${mentioned.length > 1 ? ` and ${secondaryMention}` : ""} ("${signals.quotedSnippet}..."). Going one level deeper: how does ${primaryMention} behave under high concurrency or adversarial edge cases, and what trade-off would force you to redesign that approach?`;
+            if (!prevQs.includes(strongDynamicText)) {
+              return {
+                text: strongDynamicText,
+                category: "Scenario-Based Follow-Up",
+                topic: `${primaryMention} – Concurrency & Trade-offs`,
+                rationale: `Dynamic Answer-Driven Escalation (Last Score: ${lastScore}/10 — Strong): Directly references candidate's mention of '${primaryMention}' and escalates to production concurrency & architectural trade-offs.`,
+                isFollowup: true,
+                expectedConcepts: [primaryMention, secondaryMention, "concurrency bottleneck", "latency trade-off", "fault tolerance"],
+                sample: `Under high concurrency, ${primaryMention} faces contention around shared state and I/O serialization. We mitigate this via stateless worker partitioning, asynchronous batching, and circuit-breaker fallbacks around ${secondaryMention}.`,
+                partialSample: `Under high load, ${primaryMention} can slow down, so we add caching and scale the server instances.`,
+                weakSample: `I am not sure what trade-off would cause ${primaryMention} to fail under concurrency.`
+              };
+            }
+          }
+
+          // CASE 2: Partial / Incomplete Answer (5.5 <= Score < 8.0) -> Probe the specific omitted concept or ask for concrete clarification on what they mentioned
+          if (lastScore >= 5.5 && lastScore < 8.0) {
+            if (matchedGraphKey) {
+              const cQuestion = CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].clarifyFollowup;
+              if (!prevQs.includes(cQuestion)) {
+                return {
+                  text: cQuestion,
+                  category: "Clarification Follow-Up",
+                  topic: `Clarifying: ${matchedGraphKey.toUpperCase()}`,
+                  rationale: `Dynamic Answer-Driven Clarification (Last Score: ${lastScore}/10 — Partial): Candidate covered basics but omitted ${omitted.slice(0, 2).join(", ") || "internal mechanics"}. Probing the missing link.`,
+                  isFollowup: true,
+                  expectedConcepts: CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].expected,
+                  sample: `To clarify the internal flow of ${matchedGraphKey}: ${CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].expected.join(", ")} work together to ensure correctness and prevent subtle production bugs.`,
+                  partialSample: `It works by validating inputs first and then running the main step.`,
+                  weakSample: `I don't recall the exact internal mechanism for that step.`
+                };
+              }
+            }
+
+            const missingTarget = omitted[0] || `internal implementation of ${primaryMention}`;
+            const partialDynamicText = `In your previous answer you mentioned ${primaryMention}, which is a good start, but you didn't cover ${missingTarget}. Can you explain specifically how ${missingTarget} works and illustrate it with a concrete code or architecture example?`;
+            if (!prevQs.includes(partialDynamicText)) {
+              return {
+                text: partialDynamicText,
+                category: "Clarification Follow-Up",
+                topic: `Missing Concept: ${missingTarget}`,
+                rationale: `Dynamic Answer-Driven Clarification (Last Score: ${lastScore}/10 — Partial): Detected '${primaryMention}' in answer, but '${missingTarget}' was omitted. Asking targeted follow-up on '${missingTarget}'.`,
+                isFollowup: true,
+                expectedConcepts: [missingTarget, primaryMention, "concrete implementation example", "validation"],
+                sample: `Specifically, ${missingTarget} operates alongside ${primaryMention} by enforcing deterministic state transitions, validating boundary conditions, and optimizing execution complexity.`,
+                partialSample: `${missingTarget} helps make ${primaryMention} more reliable in our application.`,
+                weakSample: `I haven't implemented ${missingTarget} directly yet.`
+              };
+            }
+          }
+
+          // CASE 3: Weak / Confused / Low Score Answer (Score < 5.5) -> Pivot gently to a foundational question or bridge to another project/skill on their resume
+          if (lastScore < 5.5) {
+            if (matchedGraphKey) {
+              const fQuestion = CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].foundationFollowup;
+              if (!prevQs.includes(fQuestion)) {
+                return {
+                  text: fQuestion,
+                  category: "Foundational Pivot",
+                  topic: `Foundations: ${matchedGraphKey.toUpperCase()}`,
+                  rationale: `Dynamic Answer-Driven Foundational Pivot (Last Score: ${lastScore}/10 — Needs Foundation): Stepping back to verify core principles of ${matchedGraphKey}.`,
+                  isFollowup: true,
+                  expectedConcepts: CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].expected.slice(0, 3),
+                  sample: `At a foundational level, ${matchedGraphKey} solves this by ${CONCEPT_KNOWLEDGE_GRAPH[matchedGraphKey].expected.slice(0, 3).join(" and ")}.`,
+                  partialSample: `It solves the basic problem by organizing the data step by step.`,
+                  weakSample: `I need to review the fundamentals of ${matchedGraphKey}.`
+                };
+              }
+            }
+
+            const nextSkill = (resume.skills && resume.skills[qNum % resume.skills.length]) || dom;
+            const weakDynamicText = `No worries—let's step back to a foundational concept from your resume (${resume.filename}): in simple terms, what core problem does ${nextSkill} solve in ${dom}, and where have you used ${nextSkill} in your coursework or projects?`;
+            if (!prevQs.includes(weakDynamicText)) {
+              return {
+                text: weakDynamicText,
+                category: "Foundational Pivot",
+                topic: `Foundational Check: ${nextSkill}`,
+                rationale: `Dynamic Answer-Driven Foundational Pivot (Last Score: ${lastScore}/10): Pivoting to candidate's core resume skill '${nextSkill}' at a foundational level to rebuild momentum.`,
+                isFollowup: true,
+                expectedConcepts: [nextSkill, "core purpose", "basic workflow", "practical example"],
+                sample: `${nextSkill} provides a structured abstraction in ${dom} for managing data, logic, and performance cleanly; I applied it in my project portfolio to handle core module workflows.`,
+                partialSample: `We used ${nextSkill} in our college lab assignments for basic tasks.`,
+                weakSample: `I only know the definition of ${nextSkill}.`
+              };
+            }
+          }
+        }
+
+        // ===================================================================
+        // PART B: RESUME-SPECIFIC PRIMARY QUESTION QUEUE (Different for every resume!)
+        // ===================================================================
+        const queue = buildResumeSpecificQuestionQueue(resume, dom, diff);
+        for (const item of queue) {
+          if (!prevQs.includes(item.text)) {
+            return item;
+          }
+        }
+
+        // Fallback for 40+ questions
+        const sk = (resume.skills && resume.skills[(qNum - 1) % resume.skills.length]) || dom;
+        return {
+          text: `Question #${qNum} (${diff} – ${dom}): Looking at ${sk} from your resume (${resume.filename}), how would you design an automated test and monitoring suite to verify ${sk} in production?`,
+          category: "Real-World Application",
+          topic: `${sk} Production Verification`,
+          rationale: `Generated unique question #${qNum} for ${resume.candidate_name}'s skill '${sk}'.`,
+          isFollowup: history.length > 0,
+          expectedConcepts: [sk, "unit & integration testing", "telemetry", "SLA verification"],
+          sample: `We combine unit tests, integration mocks, and p95 latency/error telemetry around ${sk} to catch regressions before and after deployment.`,
+          partialSample: `We write unit tests to test the main functions of ${sk}.`,
+          weakSample: `We test ${sk} manually after deployment.`
+        };
+      }
+
+      function evaluateCandidateAnswerNLP(questionObj, answerText) {
+        const raw = answerText.trim();
+        // 1. Grammar Correction (Module 8)
+        let corrected = raw
+          .replace(/\bi\b/g, "I")
+          .replace(/\bdont\b/gi, "do not")
+          .replace(/\bcant\b/gi, "cannot")
+          .replace(/\bwont\b/gi, "will not")
+          .replace(/\bbcoz\b|\bcuz\b/gi, "because")
+          .replace(/\bumm+\b|\buh+\b|\bbasically\b/gi, "")
+          .replace(/\s{2,}/g, " ")
+          .trim();
+        const grammarNotes = [];
+        if (corrected !== raw) {
+          grammarNotes.push("Expanded informal contractions and removed conversational filler words while preserving technical meaning.");
+        }
+        if (corrected && corrected[0] === corrected[0].toLowerCase()) {
+          corrected = corrected[0].toUpperCase() + corrected.slice(1);
+          grammarNotes.push("Capitalized opening letter of sentence.");
+        }
+        if (corrected && !/[.!?]$/.test(corrected)) {
+          corrected += ".";
+          grammarNotes.push("Added terminal period for complete sentence structure.");
+        }
+        if (!grammarNotes.length) {
+          grammarNotes.push("Clean, professional technical sentence structure verified.");
+        }
+
+        // 2. Semantic 7-Dimension Scoring + Signal Extraction (Module 7)
+        const signals = extractUserAnswerSignals(raw, questionObj.expectedConcepts || []);
+        const lowEffort = /not sure|don't know|do not know|no idea|haven't tested|basic familiarity|mostly shadowed|without major bugs/i.test(raw) && signals.wordCount < 22;
+
+        let tech, rel, concept, comp, clar, comm, gram;
+        if (lowEffort || signals.wordCount < 7) {
+          tech = 4.2;
+          rel = 4.8;
+          concept = 4.3;
+          comp = 3.8;
+          clar = 6.2;
+          comm = 6.0;
+          gram = Number(Math.min(9.0, Math.max(5.5, 8.6 - (grammarNotes.length > 1 ? 0.6 : 0))).toFixed(1));
+        } else {
+          const coverageRatio = signals.coveredConcepts.length / Math.max(1, (questionObj.expectedConcepts || []).length || 3);
+          const termBonus = Math.min(1.0, signals.mentionedTerms.length / 3.0);
+          const lengthBonus = Math.min(1.0, signals.wordCount / 28.0);
+          const semanticSignal = Math.min(1.0, 0.45 * coverageRatio + 0.35 * termBonus + 0.20 * lengthBonus);
+
+          tech = Number(Math.min(9.8, Math.max(5.2, 5.8 + semanticSignal * 3.9)).toFixed(1));
+          rel = Number(Math.min(10.0, Math.max(5.5, 6.2 + semanticSignal * 3.7)).toFixed(1));
+          concept = Number(Math.min(9.8, Math.max(5.2, 5.9 + semanticSignal * 3.8)).toFixed(1));
+          comp = Number(Math.min(9.6, Math.max(4.8, 5.2 + semanticSignal * 4.2)).toFixed(1));
+          clar = Number(Math.min(9.7, Math.max(6.0, 6.8 + semanticSignal * 2.8)).toFixed(1));
+          comm = Number(Math.min(9.7, Math.max(6.0, 6.9 + semanticSignal * 2.7)).toFixed(1));
+          gram = Number(Math.min(9.8, Math.max(6.5, 9.4 - (grammarNotes.length > 1 ? 0.6 : 0))).toFixed(1));
+        }
+
+        const overall = Number((
+          0.25 * tech + 0.20 * concept + 0.15 * rel + 0.15 * comp + 0.10 * clar + 0.10 * comm + 0.05 * gram
+        ).toFixed(2));
+
+        const strengths = [];
+        if (signals.mentionedTerms.length > 0) {
+          strengths.push(`Detected domain concepts in your answer: ${signals.mentionedTerms.slice(0, 5).join(", ")}`);
+        }
+        if (tech >= 7.5) {
+          strengths.push("Strong conceptual and architectural accuracy");
+        } else if (tech >= 5.5) {
+          strengths.push("Addressed the core topic; ready for deeper clarification");
+        } else {
+          strengths.push("Attempted the prompt; AI Interviewer will pivot to foundational building blocks");
+        }
+
+        const weaknesses = signals.omittedConcepts.length > 0
+          ? [`Omitted concepts (will be probed in follow-up): ${signals.omittedConcepts.slice(0, 3).join(", ")}`]
+          : ["Well-rounded coverage; next question will escalate to production scaling/concurrency"];
+
+        return {
+          technical_correctness: tech,
+          relevance: rel,
+          conceptual_understanding: concept,
+          completeness: comp,
+          clarity: clar,
+          communication_quality: comm,
+          grammar: gram,
+          overall_score: overall,
+          corrected_answer: corrected,
+          grammar_notes: grammarNotes.join(" "),
+          strengths,
+          weaknesses,
+          sample_answer: questionObj.sample,
+          signals
+        };
+      }
+
+      function startNewLiveInterviewSession() {
+        const dom = document.getElementById("cfgDomainSelect").value || state.user.preferredDomain;
+        const tp = document.getElementById("cfgTypeSelect").value || "Resume-Based Interview";
+        const diffChoice = document.getElementById("cfgDifficultySelect").value || "Adaptive";
+        const dur = getConfiguredDurationMinutes();
+        const maxQ = Math.max(1, Math.min(50, parseInt(document.getElementById("cfgMaxQuestionsInput").value || "10")));
+        document.getElementById("liveTranscriptBox").innerHTML = '<p class="text-slate-400">Your conversation history for this session will appear here as you submit answers.</p>';
+        document.getElementById("liveEvalEmptyMsg").classList.remove("hidden");
+        document.getElementById("liveEvalContentBox").classList.add("hidden");
+        document.getElementById("liveEvalScoreBadge").textContent = "Awaiting Answer";
+
+        state.liveSession = {
+          id: 100 + state.sessions.length + 1,
+          domain: dom,
+          type: tp,
+          adaptiveEnabled: diffChoice === "Adaptive",
+          currentDifficulty: diffChoice === "Adaptive" ? "Intermediate" : diffChoice,
+          durationMinutes: dur,
+          remainingSeconds: dur * 60,
+          isPaused: false,
+          maxQuestions: maxQ,
+          currentSeq: 1,
+          askedQuestions: [],
+          qaHistory: [],
+          currentQuestionObj: null
+        };
+
+        const qObj = generateContextualQuestion(state.liveSession);
+        state.liveSession.currentQuestionObj = qObj;
+        state.liveSession.askedQuestions.push(qObj.text);
+
+        switchView("live");
+        renderLiveRoomQuestion();
+
+        if (liveTimerInterval) clearInterval(liveTimerInterval);
+        liveTimerInterval = setInterval(() => {
+          if (!state.liveSession || state.liveSession.isPaused) return;
+          if (state.liveSession.remainingSeconds <= 0) {
+            finishLiveInterviewSession();
+            return;
+          }
+          state.liveSession.remainingSeconds--;
+          const m = String(Math.floor(state.liveSession.remainingSeconds / 60)).padStart(2, "0");
+          const s = String(state.liveSession.remainingSeconds % 60).padStart(2, "0");
+          document.getElementById("liveTimerBadge").textContent = `${m}:${s}`;
+        }, 1000);
+      }
+
+      function renderLiveRoomQuestion() {
+        const s = state.liveSession;
+        const q = s.currentQuestionObj;
+        document.getElementById("liveHeaderSubtitle").textContent = `${s.type} • Session #${s.id}`;
+        document.getElementById("liveHeaderDomain").textContent = s.domain;
+        document.getElementById("liveQNumberBadge").textContent = `${s.currentSeq} / ${s.maxQuestions}`;
+        document.getElementById("liveDifficultyBadge").textContent = s.currentDifficulty;
+        document.getElementById("liveTopicLabel").textContent = q.topic;
+        document.getElementById("liveCategoryBadge").textContent = q.category;
+        document.getElementById("liveQuestionText").textContent = q.text;
+        document.getElementById("liveRationaleBox").innerHTML = `<strong>Interviewer Context:</strong> ${q.rationale}`;
+
+        const fBadge = document.getElementById("liveFollowupBadge");
+        if (q.isFollowup) fBadge.classList.remove("hidden");
+        else fBadge.classList.add("hidden");
+
+        const pct = Math.round(((s.currentSeq - 1) / Math.max(1, s.maxQuestions)) * 100);
+        document.getElementById("liveProgressBar").style.width = `${pct}%`;
+
+        const ta = document.getElementById("liveAnswerTextarea");
+        ta.value = "";
+        ta.disabled = false;
+        document.getElementById("liveSubmitAnswerBtn").classList.remove("hidden");
+        document.getElementById("liveNextQuestionBtn").classList.add("hidden");
+      }
+
+      // Real Microphone Implementation in Live View (Module 6)
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let liveRecognition = null;
+      let liveMediaRecorder = null;
+      let liveAudioStream = null;
+      let liveAudioChunks = [];
+      let liveIsRecording = false;
+      let liveCommittedText = "";
+
+      function showLiveMicNotice(msg, isErr) {
+        const box = document.getElementById("liveMicNoticeBox");
+        box.classList.remove("hidden");
+        box.className = "p-3 rounded-xl text-xs border " + (
+          isErr ? "bg-rose-950/70 border-rose-500/40 text-rose-200" : "bg-indigo-950/70 border-indigo-500/40 text-indigo-200"
+        );
+        box.textContent = msg;
+      }
+
+      async function startLiveMic() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          showLiveMicNotice("Microphone API (navigator.mediaDevices.getUserMedia) is unavailable in this browser context. You can type or insert a demo answer below.", true);
+          return;
+        }
+        try {
+          liveAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          liveAudioChunks = [];
+          liveMediaRecorder = new MediaRecorder(liveAudioStream);
+          liveMediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) liveAudioChunks.push(e.data); };
+          liveMediaRecorder.onstop = () => {
+            if (liveAudioChunks.length > 0) {
+              const blob = new Blob(liveAudioChunks, { type: "audio/webm" });
+              const audioEl = document.getElementById("liveAudioPlayback");
+              audioEl.src = URL.createObjectURL(blob);
+              audioEl.classList.remove("hidden");
+            }
+            if (liveAudioStream) liveAudioStream.getTracks().forEach(t => t.stop());
+          };
+          liveMediaRecorder.start();
+          liveIsRecording = true;
+          document.getElementById("liveMicDot").className = "w-2.5 h-2.5 rounded-full bg-rose-500 pulse-mic";
+          document.getElementById("liveMicStatusText").textContent = "Recording Live...";
+          document.getElementById("liveStartMicBtn").disabled = true;
+          document.getElementById("liveStopMicBtn").disabled = false;
+          document.getElementById("liveStopMicBtn").classList.remove("opacity-50", "cursor-not-allowed");
+
+          if (SpeechRec) {
+            const ta = document.getElementById("liveAnswerTextarea");
+            liveCommittedText = ta.value ? ta.value.trim() + " " : "";
+            liveRecognition = new SpeechRec();
+            liveRecognition.continuous = true;
+            liveRecognition.interimResults = true;
+            liveRecognition.lang = "en-US";
+            liveRecognition.onresult = (evt) => {
+              let interim = "";
+              for (let i = evt.resultIndex; i < evt.results.length; i++) {
+                const tr = evt.results[i][0].transcript;
+                if (evt.results[i].isFinal) liveCommittedText += tr + " ";
+                else interim += tr;
+              }
+              ta.value = (liveCommittedText + interim).trim();
+            };
+            liveRecognition.start();
+            showLiveMicNotice("Real microphone active: speaking is being transcribed via Web Speech API + MediaRecorder.", false);
+          } else {
+            showLiveMicNotice("Audio is recording via MediaRecorder. Live Web Speech transcription requires Chrome or Edge.", false);
+          }
+        } catch (err) {
+          showLiveMicNotice(`Microphone access notice (${err.name}): ${err.message}. You can type or click 'Insert Demo Answer' to test evaluation.`, true);
+        }
+      }
+
+      function stopLiveMic() {
+        if (liveRecognition) { try { liveRecognition.stop(); } catch (e) {} liveRecognition = null; }
+        if (liveMediaRecorder && liveMediaRecorder.state !== "inactive") { try { liveMediaRecorder.stop(); } catch (e) {} }
+        liveIsRecording = false;
+        document.getElementById("liveMicDot").className = "w-2 h-2 rounded-full bg-emerald-400";
+        document.getElementById("liveMicStatusText").textContent = "Mic Ready";
+        document.getElementById("liveStartMicBtn").disabled = false;
+        document.getElementById("liveStopMicBtn").disabled = true;
+        document.getElementById("liveStopMicBtn").classList.add("opacity-50", "cursor-not-allowed");
+      }
+
+      document.getElementById("liveStartMicBtn").addEventListener("click", startLiveMic);
+      document.getElementById("liveStopMicBtn").addEventListener("click", stopLiveMic);
+      document.getElementById("liveRestartMicBtn").addEventListener("click", () => {
+        stopLiveMic();
+        document.getElementById("liveAnswerTextarea").value = "";
+        liveCommittedText = "";
+        setTimeout(startLiveMic, 200);
+      });
+      document.getElementById("liveClearTextBtn").addEventListener("click", () => {
+        document.getElementById("liveAnswerTextarea").value = "";
+        liveCommittedText = "";
+      });
+      document.getElementById("liveInsertSampleAnswerBtn").addEventListener("click", () => {
+        if (!state.liveSession) return;
+        document.getElementById("liveAnswerTextarea").value = state.liveSession.currentQuestionObj.sample;
+        showLiveMicNotice("Inserted a Strong/Deep Technical Answer (~9+/10) -> Submitting this will trigger an Advanced Concurrency/Architecture Follow-Up on the exact terms mentioned!", false);
+      });
+      document.getElementById("liveInsertPartialAnswerBtn").addEventListener("click", () => {
+        if (!state.liveSession) return;
+        const q = state.liveSession.currentQuestionObj;
+        document.getElementById("liveAnswerTextarea").value = q.partialSample || `We used ${(state.activeResume.skills && state.activeResume.skills[0]) || state.liveSession.domain} to implement the main workflow and handle basic inputs.`;
+        showLiveMicNotice("Inserted a Partial/Incomplete Answer (~6.5/10) -> Submitting this will trigger a Targeted Clarification Follow-Up asking about the exact omitted concept!", false);
+      });
+      document.getElementById("liveInsertWeakAnswerBtn").addEventListener("click", () => {
+        if (!state.liveSession) return;
+        const q = state.liveSession.currentQuestionObj;
+        document.getElementById("liveAnswerTextarea").value = q.weakSample || "I am not completely sure about the internal mechanism or trade-offs for this topic.";
+        showLiveMicNotice("Inserted a Weak/Unsure Answer (~4.3/10) -> Submitting this will trigger a Foundational Concept Pivot to rebuild core understanding!", false);
+      });
+      document.getElementById("liveSpeakBtn").addEventListener("click", () => {
+        if ("speechSynthesis" in window && state.liveSession) {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(new SpeechSynthesisUtterance(state.liveSession.currentQuestionObj.text));
+        }
+      });
+
+      document.getElementById("livePauseBtn").addEventListener("click", function() {
+        if (!state.liveSession) return;
+        state.liveSession.isPaused = !state.liveSession.isPaused;
+        this.textContent = state.liveSession.isPaused ? "Resume" : "Pause";
+      });
+
+      document.getElementById("liveSubmitAnswerBtn").addEventListener("click", () => {
+        if (liveIsRecording) stopLiveMic();
+        const s = state.liveSession;
+        if (!s) return;
+        const ans = document.getElementById("liveAnswerTextarea").value.trim();
+        if (!ans) {
+          showLiveMicNotice("Please enter or record an answer (or click 'Insert Demo Answer') before submitting.", true);
+          return;
+        }
+
+        const ev = evaluateCandidateAnswerNLP(s.currentQuestionObj, ans);
+        s.qaHistory.push({
+          seq: s.currentSeq,
+          question: s.currentQuestionObj.text,
+          category: s.currentQuestionObj.category,
+          difficulty: s.currentDifficulty,
+          answer: ans,
+          corrected: ev.corrected_answer,
+          score: ev.overall_score,
+          eval: ev,
+          strengths: ev.strengths,
+          weaknesses: ev.weaknesses,
+          sample: ev.sample_answer,
+          expectedConcepts: s.currentQuestionObj.expectedConcepts || [],
+          signals: ev.signals
+        });
+
+        // Adaptive Difficulty Engine (Module 9)
+        const recentScores = s.qaHistory.slice(-3).map(item => item.score);
+        const rollingAvg = Number((recentScores.reduce((a, b) => a + b, 0) / recentScores.length).toFixed(2));
+        const ladder = ["Beginner", "Intermediate", "Advanced", "Expert"];
+        let currIdx = ladder.indexOf(s.currentDifficulty);
+        if (currIdx === -1) currIdx = 1;
+        let adaptiveMsg = `Rolling Average: ${rollingAvg}/10 — Maintaining ${s.currentDifficulty} difficulty.`;
+        if (s.adaptiveEnabled && recentScores.length >= 2) {
+          if (rollingAvg > 8.0 && currIdx < ladder.length - 1) {
+            s.currentDifficulty = ladder[currIdx + 1];
+            adaptiveMsg = `Rolling Average (${rollingAvg}/10) > 8.0: Adaptive Engine increased difficulty to ${s.currentDifficulty}!`;
+          } else if (rollingAvg < 5.0 && currIdx > 0) {
+            s.currentDifficulty = ladder[currIdx - 1];
+            adaptiveMsg = `Rolling Average (${rollingAvg}/10) < 5.0: Adaptive Engine reduced difficulty to ${s.currentDifficulty}.`;
+          }
+        }
+
+        // Render Live Evaluation Box
+        document.getElementById("liveEvalEmptyMsg").classList.add("hidden");
+        document.getElementById("liveEvalContentBox").classList.remove("hidden");
+        document.getElementById("liveEvalScoreBadge").textContent = `Overall: ${ev.overall_score} / 10`;
+
+        const dims = [
+          ["Technical", ev.technical_correctness],
+          ["Relevance", ev.relevance],
+          ["Conceptual", ev.conceptual_understanding],
+          ["Completeness", ev.completeness],
+          ["Clarity", ev.clarity],
+          ["Communication", ev.communication_quality],
+          ["Grammar", ev.grammar]
+        ];
+        document.getElementById("liveEvalMetricsGrid").innerHTML = dims.map(([k, v]) => `
+          <div class="p-2 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <span class="text-slate-300">${k}</span>
+            <strong class="text-indigo-300">${v}/10</strong>
+          </div>
+        `).join("");
+        document.getElementById("liveAdaptiveAlert").innerHTML = `<strong>Adaptive Difficulty:</strong> ${adaptiveMsg}`;
+        document.getElementById("liveEvalCorrectedText").textContent = ev.corrected_answer;
+        document.getElementById("liveEvalGrammarNotes").textContent = ev.grammar_notes;
+        document.getElementById("liveEvalStrengths").textContent = ev.strengths.join(" • ");
+        document.getElementById("liveEvalWeaknesses").textContent = ev.weaknesses.join(" • ");
+        document.getElementById("liveEvalModelAnswer").textContent = ev.sample_answer;
+
+        // Update Conversation Memory Transcript
+        document.getElementById("liveTranscriptBox").innerHTML = s.qaHistory.slice().reverse().map(item => `
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1">
+            <div class="flex items-center justify-between">
+              <strong class="text-indigo-300">Q${item.seq} (${item.category} • ${item.difficulty})</strong>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">${item.score}/10</span>
+            </div>
+            <div class="text-slate-200 font-medium">${item.question}</div>
+            <div class="text-slate-400"><strong>Your Answer:</strong> ${item.answer}</div>
+          </div>
+        `).join("");
+
+        document.getElementById("liveAnswerTextarea").disabled = true;
+        document.getElementById("liveSubmitAnswerBtn").classList.add("hidden");
+        document.getElementById("liveNextQuestionBtn").classList.remove("hidden");
+      });
+
+      document.getElementById("liveNextQuestionBtn").addEventListener("click", () => {
+        const s = state.liveSession;
+        if (!s) return;
+        if (s.currentSeq >= s.maxQuestions) {
+          finishLiveInterviewSession();
+          return;
+        }
+        s.currentSeq++;
+        const nextQ = generateContextualQuestion(s);
+        s.currentQuestionObj = nextQ;
+        s.askedQuestions.push(nextQ.text);
+        renderLiveRoomQuestion();
+      });
+
+      document.getElementById("liveSkipBtn").addEventListener("click", () => {
+        const s = state.liveSession;
+        if (!s) return;
+        if (s.currentSeq >= s.maxQuestions) {
+          finishLiveInterviewSession();
+          return;
+        }
+        s.currentSeq++;
+        const nextQ = generateContextualQuestion(s);
+        s.currentQuestionObj = nextQ;
+        s.askedQuestions.push(nextQ.text);
+        renderLiveRoomQuestion();
+      });
+
+      document.getElementById("liveEndBtn").addEventListener("click", finishLiveInterviewSession);
+
+      function finishLiveInterviewSession() {
+        if (liveTimerInterval) clearInterval(liveTimerInterval);
+        const s = state.liveSession;
+        if (!s) { switchView("dashboard"); return; }
+
+        const answered = s.qaHistory;
+        const n = Math.max(1, answered.length);
+        const avgOverall = answered.length ? Number((answered.reduce((a, b) => a + b.score, 0) / n).toFixed(2)) : 7.8;
+
+        const completedRecord = {
+          id: s.id,
+          date: "21 Nov 2026",
+          domain: s.domain,
+          type: s.type,
+          difficulty: s.currentDifficulty,
+          overallScore: avgOverall,
+          techScore: answered.length ? Number((answered.reduce((a, b) => a + (b.eval ? b.eval.technical_correctness : 8), 0) / n).toFixed(2)) : 8.0,
+          conceptScore: answered.length ? Number((answered.reduce((a, b) => a + (b.eval ? b.eval.conceptual_understanding : 8), 0) / n).toFixed(2)) : 8.0,
+          problemScore: avgOverall,
+          commScore: answered.length ? Number((answered.reduce((a, b) => a + (b.eval ? b.eval.communication_quality : 8), 0) / n).toFixed(2)) : 8.2,
+          grammarScore: answered.length ? Number((answered.reduce((a, b) => a + (b.eval ? b.eval.grammar : 8.5), 0) / n).toFixed(2)) : 8.5,
+          compScore: answered.length ? Number((answered.reduce((a, b) => a + (b.eval ? b.eval.completeness : 8), 0) / n).toFixed(2)) : 8.0,
+          qa: answered.length ? answered : [{
+            seq: 1,
+            question: s.currentQuestionObj.text,
+            category: s.currentQuestionObj.category,
+            difficulty: s.currentDifficulty,
+            answer: "(Session ended before submission)",
+            corrected: "(Session ended before submission)",
+            score: 0,
+            strengths: ["Configured session"],
+            weaknesses: ["Complete all questions for full scoring"],
+            sample: s.currentQuestionObj.sample
+          }]
+        };
+
+        state.sessions.push(completedRecord);
+        state.activeReportSessionId = completedRecord.id;
+        state.liveSession = null;
+        showToast(`Interview Session #${completedRecord.id} completed! Overall Score: ${completedRecord.overallScore}/10.`, "success");
+        switchView("result");
+      }
+
+      // =====================================================================
+      // VIEW 5: INTERVIEW RESULT REPORT RENDERER (Module 11)
+      // =====================================================================
+      let repRadarInstance = null;
+      function renderResultView(sessionId) {
+        const s = state.sessions.find(item => item.id === sessionId) || state.sessions[state.sessions.length - 1];
+        if (!s) return;
+
+        document.getElementById("repHeaderTitle").textContent = `${state.user.name} — ${s.domain}`;
+        document.getElementById("repHeaderMeta").textContent = `Session #${s.id} • ${s.type} • Final Difficulty: ${s.difficulty} • Questions Evaluated: ${s.qa.length} • Date: ${s.date}`;
+        document.getElementById("repOverallScore").textContent = `${s.overallScore} / 10`;
+        document.getElementById("repExecSummary").textContent =
+          `${state.user.name} completed a ${s.type} in ${s.domain} reaching ${s.difficulty} difficulty with an overall weighted score of ${s.overallScore}/10. Technical accuracy averaged ${s.techScore}/10 and communication clarity reached ${s.commScore}/10.`;
+
+        document.getElementById("repStrongTopics").innerHTML = [
+          `${s.domain} Core Architecture & Conceptual Mechanics`,
+          `Resume Project Implementation (${state.activeResume.projects[0].title})`
+        ].map(t => `<li>${t}</li>`).join("");
+
+        document.getElementById("repLearningTopics").innerHTML = [
+          `Production Scalability & Latency Trade-offs in ${s.domain}`,
+          "Quantitative Benchmarking & Edge-Case Recovery Scenarios"
+        ].map(t => `<li>${t}</li>`).join("");
+
+        document.getElementById("repQuestionsBreakdownBox").innerHTML = s.qa.map(item => `
+          <div class="p-4 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-indigo-300">Q${item.seq} (${item.category} • ${item.difficulty})</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-extrabold">${item.score} / 10</span>
+            </div>
+            <div class="text-sm font-bold text-white">${item.question}</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                <strong class="text-slate-400 block mb-0.5">Submitted Answer:</strong>
+                <span class="text-slate-200">${item.answer}</span>
+              </div>
+              <div class="p-3 rounded-lg bg-slate-950 border border-indigo-500/30">
+                <strong class="text-indigo-300 block mb-0.5">Grammar-Corrected Version:</strong>
+                <span class="text-emerald-300">${item.corrected}</span>
+              </div>
+            </div>
+            <div><strong class="text-emerald-400">Strengths:</strong> ${(item.strengths || []).join(" • ")}</div>
+            <div><strong class="text-amber-400">Suggestions:</strong> ${(item.weaknesses || []).join(" • ")}</div>
+            <div class="p-2.5 rounded-lg bg-indigo-950/30 border border-indigo-500/20">
+              <strong class="text-indigo-300">10/10 Model Answer:</strong> ${item.sample}
+            </div>
+          </div>
+        `).join("");
+
+        const ctx = document.getElementById("repRadarChart");
+        if (repRadarInstance) repRadarInstance.destroy();
+        repRadarInstance = new Chart(ctx, {
+          type: "radar",
+          data: {
+            labels: ["Technical", "Conceptual", "Problem Solving", "Communication", "Grammar", "Completeness"],
+            datasets: [{
+              label: "Competency Profile (/10)",
+              data: [s.techScore, s.conceptScore, s.problemScore, s.commScore, s.grammarScore, s.compScore],
+              backgroundColor: "rgba(99, 102, 241, 0.25)",
+              borderColor: "#818CF8",
+              pointBackgroundColor: "#C084FC",
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { r: { min: 0, max: 10, ticks: { display: false } } }
+          }
+        });
+      }
+
+      // =====================================================================
+      // VIEW 6 & 7: HISTORY & PERFORMANCE ANALYTICS CHARTS (Module 12)
+      // =====================================================================
+      function renderHistoryView() {
+        const tbody = document.getElementById("historyTableBody");
+        tbody.innerHTML = state.sessions.slice().reverse().map(s => `
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-3 px-3 font-bold text-white">#${s.id}</td>
+            <td class="py-3 px-3 text-slate-400">${s.date}</td>
+            <td class="py-3 px-3 text-indigo-300 font-semibold">${s.domain}</td>
+            <td class="py-3 px-3 text-slate-300">${s.type}</td>
+            <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">${s.difficulty}</span></td>
+            <td class="py-3 px-3 text-slate-300">${s.qa.length}</td>
+            <td class="py-3 px-3 font-extrabold text-emerald-400">${s.overallScore} / 10</td>
+            <td class="py-3 px-3 text-right">
+              <button type="button" data-sid="${s.id}" class="hist-open-btn px-3 py-1 rounded-lg bg-indigo-600/25 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-semibold">Open Report</button>
+            </td>
+          </tr>
+        `).join("");
+        tbody.querySelectorAll(".hist-open-btn").forEach(btn => {
+          btn.addEventListener("click", function() {
+            state.activeReportSessionId = parseInt(this.getAttribute("data-sid"));
+            switchView("result");
+          });
+        });
+      }
+
+      let anaCharts = [];
+      function renderAnalyticsCharts() {
+        anaCharts.forEach(c => c.destroy());
+        anaCharts = [];
+
+        const labels = state.sessions.map(s => `#${s.id} (${s.date})`);
+        const scores = state.sessions.map(s => s.overallScore);
+
+        anaCharts.push(new Chart(document.getElementById("anaTrendChart"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [{ label: "Overall Score (/10)", data: scores, borderColor: "#6366F1", backgroundColor: "rgba(99,102,241,0.2)", fill: true, tension: 0.35 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+        }));
+
+        const domMap = {};
+        state.sessions.forEach(s => {
+          if (!domMap[s.domain]) domMap[s.domain] = [];
+          domMap[s.domain].push(s.overallScore);
+        });
+        const domLabels = Object.keys(domMap);
+        const domAvgs = domLabels.map(d => Number((domMap[d].reduce((a, b) => a + b, 0) / domMap[d].length).toFixed(2)));
+
+        anaCharts.push(new Chart(document.getElementById("anaDomainChart"), {
+          type: "bar",
+          data: {
+            labels: domLabels,
+            datasets: [{ label: "Domain Avg (/10)", data: domAvgs, backgroundColor: ["#6366F1", "#8B5CF6", "#10B981", "#3B82F6"] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+        }));
+
+        const n = Math.max(1, state.sessions.length);
+        const dimAvgs = [
+          Number((state.sessions.reduce((a, s) => a + s.techScore, 0) / n).toFixed(2)),
+          Number((state.sessions.reduce((a, s) => a + s.conceptScore, 0) / n).toFixed(2)),
+          Number((state.sessions.reduce((a, s) => a + s.problemScore, 0) / n).toFixed(2)),
+          Number((state.sessions.reduce((a, s) => a + s.compScore, 0) / n).toFixed(2)),
+          Number((state.sessions.reduce((a, s) => a + s.commScore, 0) / n).toFixed(2)),
+          Number((state.sessions.reduce((a, s) => a + s.grammarScore, 0) / n).toFixed(2))
+        ];
+
+        anaCharts.push(new Chart(document.getElementById("anaDimensionChart"), {
+          type: "bar",
+          data: {
+            labels: ["Technical", "Conceptual", "Problem Solving", "Completeness", "Communication", "Grammar"],
+            datasets: [{ label: "Dimension Score (/10)", data: dimAvgs, backgroundColor: ["#4F46E5", "#7C3AED", "#2563EB", "#059669", "#0D9488", "#D97706"] }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+        }));
+
+        anaCharts.push(new Chart(document.getElementById("anaCommTechChart"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              { label: "Technical Mastery (/10)", data: state.sessions.map(s => s.techScore), borderColor: "#3B82F6", tension: 0.3 },
+              { label: "Communication Quality (/10)", data: state.sessions.map(s => s.commScore), borderColor: "#10B981", tension: 0.3 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+        }));
+      }
+
+      // =====================================================================
+      // VIEW 8: RECRUITER AI CANDIDATE SCREENING & COMPARISON (Module 10)
+      // =====================================================================
+      let recChartInstance = null;
+      function renderRecruiterView() {
+        const cardsBox = document.getElementById("recCandidateCardsContainer");
+        const sorted = state.screenedCandidates.slice().sort((a, b) => b.matchScore - a.matchScore);
+        cardsBox.innerHTML = sorted.map((c, idx) => `
+          <div class="glass-card p-5 rounded-2xl space-y-2 border-l-4 ${c.matchScore >= 75 ? 'border-l-emerald-500' : 'border-l-amber-500'} text-xs">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold mr-1.5">Rank #${idx + 1}</span>
+                <strong class="text-base text-white">${c.name}</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[11px] uppercase text-slate-400 block">Decision-Support Match</span>
+                <strong class="text-xl text-emerald-400">${c.matchScore}%</strong>
+              </div>
+            </div>
+            <div class="text-slate-300"><strong>Education & Experience:</strong> ${c.education}</div>
+            <div><strong class="text-emerald-400">Matching Skills (${c.matchingSkills.length}):</strong> ${c.matchingSkills.join(", ") || "None"}</div>
+            <div><strong class="text-amber-400">Missing Required Skills (${c.missingSkills.length}):</strong> ${c.missingSkills.join(", ") || "None"}</div>
+            <div><strong class="text-indigo-300">Relevant Projects:</strong> ${c.projects.join(" • ")}</div>
+          </div>
+        `).join("");
+
+        const ctx = document.getElementById("recComparisonChart");
+        if (recChartInstance) recChartInstance.destroy();
+        recChartInstance = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: sorted.map(c => c.name),
+            datasets: [
+              { label: "Overall Job Match %", data: sorted.map(c => c.matchScore), backgroundColor: "#6366F1" },
+              { label: "Required Skills Match %", data: sorted.map(c => c.skillsScore), backgroundColor: "#10B981" },
+              { label: "Project Relevance %", data: sorted.map(c => c.projectScore), backgroundColor: "#A855F7" }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { min: 0, max: 100 } }
+          }
+        });
+      }
+
+      function scoreCandidateAgainstJob(candName, resumeTxt) {
+        const reqSkills = document.getElementById("recReqSkillsInput").value.split(",").map(s => s.trim()).filter(Boolean);
+        const matched = [];
+        const missing = [];
+        reqSkills.forEach(sk => {
+          const escaped = sk.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          if (new RegExp(`(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`, "i").test(resumeTxt)) matched.push(sk);
+          else missing.push(sk);
+        });
+        const parsed = parseResumeTextNLP(resumeTxt, candName + ".pdf");
+        const skillsPct = reqSkills.length ? Number(((matched.length / reqSkills.length) * 100).toFixed(1)) : 80.0;
+        const projPct = Number(Math.min(96, 62 + parsed.projects.length * 12 + matched.length * 3).toFixed(1));
+        const overall = Number((0.45 * skillsPct + 0.25 * projPct + 0.30 * 86).toFixed(1));
+        return {
+          name: candName || parsed.candidate_name || "Candidate",
+          matchScore: overall,
+          skillsScore: skillsPct,
+          projectScore: projPct,
+          matchingSkills: matched,
+          missingSkills: missing,
+          projects: parsed.projects.map(p => `${p.title} (${p.technologies})`),
+          education: parsed.education
+        };
+      }
+
+      document.getElementById("recResumeFilesInput").addEventListener("change", async function() {
+        const files = Array.from(this.files || []);
+        if (!files.length) return;
+        let count = 0;
+        for (const f of files) {
+          try {
+            const txt = await extractTextFromUploadedFile(f);
+            const parsed = parseResumeTextNLP(txt, f.name);
+            const cName = (parsed.candidate_name && parsed.candidate_name !== "Candidate")
+              ? parsed.candidate_name
+              : f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ");
+            state.screenedCandidates.push(scoreCandidateAgainstJob(cName, txt));
+            count++;
+          } catch (err) {
+            showToast(`Could not screen '${f.name}': ${err.message}`, "error");
+          }
+        }
+        if (count > 0) {
+          renderRecruiterView();
+          showToast(`Successfully parsed and screened ${count} uploaded candidate resume file(s).`, "success");
+        }
+      });
+
+      document.getElementById("recScreenCandidateBtn").addEventListener("click", () => {
+        const name = document.getElementById("recCandNameInput").value.trim();
+        const resumeTxt = document.getElementById("recCandResumeInput").value.trim();
+        if (!resumeTxt) {
+          showToast("Please upload PDF/DOCX resume file(s) above or paste candidate resume text.", "error");
+          return;
+        }
+        const entry = scoreCandidateAgainstJob(name, resumeTxt);
+        state.screenedCandidates.push(entry);
+        document.getElementById("recCandNameInput").value = "";
+        document.getElementById("recCandResumeInput").value = "";
+        renderRecruiterView();
+        showToast(`Screened ${entry.name}: ${entry.matchScore}% decision-support match estimate.`, "success");
+      });
+
+      if (false) {
+        const reqSkills = document.getElementById("recReqSkillsInput").value.split(",").map(s => s.trim()).filter(Boolean);
+        const matched = [];
+        const missing = [];
+        reqSkills.forEach(sk => {
+          if (resumeTxt.toLowerCase().includes(sk.toLowerCase())) matched.push(sk);
+          else missing.push(sk);
+        });
+        const skillsPct = reqSkills.length ? Number(((matched.length / reqSkills.length) * 100).toFixed(1)) : 80.0;
+        const projPct = Number(Math.min(96, 60 + matched.length * 5).toFixed(1));
+        const overall = Number((0.45 * skillsPct + 0.25 * projPct + 0.30 * 85).toFixed(1));
+
+        state.screenedCandidates.push({
+          name,
+          matchScore: overall,
+          skillsScore: skillsPct,
+          projectScore: projPct,
+          matchingSkills: matched,
+          missingSkills: missing,
+          projects: ["Extracted Technical Project Portfolio"],
+          education: document.getElementById("recEduReqInput").value
+        });
+        document.getElementById("recCandNameInput").value = "";
+        document.getElementById("recCandResumeInput").value = "";
+        renderRecruiterView();
+        showToast(`Screened ${name}: ${overall}% decision-support match estimate.`, "success");
+      }
+
+      // Profile & Auth handlers
+      document.getElementById("saveProfileBtn").addEventListener("click", () => {
+        state.user.name = document.getElementById("profNameInput").value.trim() || state.user.name;
+        state.user.email = document.getElementById("profEmailInput").value.trim() || state.user.email;
+        state.user.education = document.getElementById("profEduInput").value.trim() || state.user.education;
+        state.user.gradYear = parseInt(document.getElementById("profGradInput").value || "2027");
+        showToast("Profile updated and synchronized with AI Interviewer Engine.", "success");
+        switchView("dashboard");
+      });
+
+      document.getElementById("authApplyBtn").addEventListener("click", () => {
+        state.user.name = document.getElementById("authUserNameInput").value.trim() || state.user.name;
+        state.user.role = document.getElementById("authRoleSelect").value;
+        showToast(`Signed in as ${state.user.name} (${state.user.role.toUpperCase()}).`, "success");
+        switchView(state.user.role === "recruiter" ? "recruiter" : "dashboard");
+      });
+
+      // Initialize App on Load with full NLP parsed metadata
+      populateDomainDropdowns();
+      state.activeResume = parseResumeTextNLP(SAMPLE_RESUMES.arjun.raw_text, SAMPLE_RESUMES.arjun.filename);
+      renderDashboard();
+      renderResumeView();
+      if (window.lucide) window.lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>

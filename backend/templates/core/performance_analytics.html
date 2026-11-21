@@ -1,0 +1,105 @@
+{% extends "core/base.html" %}
+{% block title %}Performance Analytics Dashboard – AI Interviewer{% endblock %}
+{% block content %}
+<div class="space-y-8">
+  <div class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-white">Comprehensive Interview Performance Analytics</h1>
+      <p class="text-xs text-slate-400">Real-time database visualizations across {{ completed_count }} completed session(s) and {{ responses_count }} evaluated answer(s).</p>
+    </div>
+    <a href="{% url 'interview_configure' %}" class="px-5 py-2.5 rounded-xl font-semibold text-xs text-white gradient-brand">
+      + Run Another Session
+    </a>
+  </div>
+
+  <!-- 4 Chart.js Analytics Panels (Module 12 Requirements 1-5) -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="glass-card p-6 rounded-2xl">
+      <h2 class="text-base font-bold text-white mb-3">1. Interview Score Trends Across Sessions</h2>
+      <div class="relative h-64"><canvas id="trendChart"></canvas></div>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl">
+      <h2 class="text-base font-bold text-white mb-3">2. Domain-Wise Average Performance</h2>
+      <div class="relative h-64"><canvas id="domainChart"></canvas></div>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl">
+      <h2 class="text-base font-bold text-white mb-3">3. 7-Dimension Technical vs Communication Breakdown</h2>
+      <div class="relative h-64"><canvas id="dimensionChart"></canvas></div>
+    </div>
+
+    <div class="glass-card p-6 rounded-2xl">
+      <h2 class="text-base font-bold text-white mb-3">4. Technical Mastery vs Communication Trajectory</h2>
+      <div class="relative h-64"><canvas id="commVsTechChart"></canvas></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function() {
+    const trendLabels = {{ trend_labels_json|safe }};
+    const trendScores = {{ trend_scores_json|safe }};
+    const domainLabels = {{ domain_labels_json|safe }};
+    const domainAverages = {{ domain_averages_json|safe }};
+    const dimAverages = {{ dim_averages_json|safe }};
+    const commTrend = {{ comm_trend_json|safe }};
+    const techTrend = {{ tech_trend_json|safe }};
+
+    new Chart(document.getElementById('trendChart'), {
+      type: 'line',
+      data: {
+        labels: trendLabels.length ? trendLabels : ['No Sessions'],
+        datasets: [{
+          label: 'Overall Score (/10)',
+          data: trendScores.length ? trendScores : [0],
+          borderColor: '#6366F1',
+          backgroundColor: 'rgba(99, 102, 241, 0.2)',
+          fill: true,
+          tension: 0.35
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+    });
+
+    new Chart(document.getElementById('domainChart'), {
+      type: 'bar',
+      data: {
+        labels: domainLabels.length ? domainLabels : ['No Domains'],
+        datasets: [{
+          label: 'Average Domain Score (/10)',
+          data: domainAverages.length ? domainAverages : [0],
+          backgroundColor: ['#6366F1', '#8B5CF6', '#3B82F6', '#10B981', '#F59E0B']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+    });
+
+    new Chart(document.getElementById('dimensionChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Technical', 'Conceptual', 'Relevance', 'Completeness', 'Communication', 'Grammar'],
+        datasets: [{
+          label: 'Dimension Average (/10)',
+          data: dimAverages,
+          backgroundColor: ['#4F46E5', '#7C3AED', '#2563EB', '#059669', '#0D9488', '#D97706']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+    });
+
+    new Chart(document.getElementById('commVsTechChart'), {
+      type: 'line',
+      data: {
+        labels: trendLabels.length ? trendLabels : ['No Sessions'],
+        datasets: [
+          { label: 'Technical Knowledge (/10)', data: techTrend.length ? techTrend : [0], borderColor: '#3B82F6', tension: 0.3 },
+          { label: 'Communication Quality (/10)', data: commTrend.length ? commTrend : [0], borderColor: '#10B981', tension: 0.3 }
+        ]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 10 } } }
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+{% block title %}Candidate Profile – AI Interviewer{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto glass-card p-8 rounded-2xl">
+  <h1 class="text-2xl font-bold text-white mb-1">Manage Your Candidate / Recruiter Profile</h1>
+  <p class="text-sm text-slate-400 mb-6">Your profile skills and preferred domain are automatically synchronized with the AI Interviewer Engine.</p>
+
+  <form method="POST" action="{% url 'profile' %}" class="space-y-5">
+    {% csrf_token %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Full Name</label>
+        <input type="text" name="full_name" value="{{ profile.full_name }}" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Email Address</label>
+        <input type="email" name="email" value="{{ user.email }}" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Phone Number</label>
+        <input type="text" name="phone_number" value="{{ profile.phone_number }}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Education</label>
+        <input type="text" name="education" value="{{ profile.education }}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Graduation Year</label>
+        <input type="number" name="graduation_year" value="{{ profile.graduation_year }}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Preferred Interview Domain</label>
+        <select name="preferred_domain" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+          {% for val, label in domains %}
+          <option value="{{ val }}" {% if profile.preferred_domain == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Experience Level</label>
+        <input type="text" name="experience_level" value="{{ profile.experience_level }}" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Account Role</label>
+        <select name="role" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">
+          <option value="candidate" {% if profile.role == 'candidate' %}selected{% endif %}>Candidate</option>
+          <option value="recruiter" {% if profile.role == 'recruiter' %}selected{% endif %}>Recruiter</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold uppercase text-slate-300 mb-1.5">Technical Skills (Comma-Separated)</label>
+      <textarea name="skills" rows="3" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm">{{ skills_csv }}</textarea>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="submit" class="px-6 py-2.5 rounded-xl font-semibold text-white gradient-brand shadow-lg shadow-indigo-500/30 hover:opacity-95 transition">
+        Save Profile Changes
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

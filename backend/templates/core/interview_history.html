@@ -1,0 +1,56 @@
+{% extends "core/base.html" %}
+{% block title %}Interview History – AI Interviewer{% endblock %}
+{% block content %}
+<div class="glass-card p-6 rounded-2xl space-y-5">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-extrabold text-white">Complete Interview History</h1>
+      <p class="text-xs text-slate-400">All completed and in-progress mock interview sessions stored in your SQLite profile.</p>
+    </div>
+    <a href="{% url 'interview_configure' %}" class="px-5 py-2.5 rounded-xl font-semibold text-xs text-white gradient-brand">
+      + Start New Interview
+    </a>
+  </div>
+
+  {% if sessions %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm">
+      <thead class="text-xs uppercase text-slate-400 border-b border-slate-800">
+        <tr>
+          <th class="py-3 px-3">Date & Time</th>
+          <th class="py-3 px-3">Domain</th>
+          <th class="py-3 px-3">Interview Type</th>
+          <th class="py-3 px-3">Difficulty</th>
+          <th class="py-3 px-3">Questions</th>
+          <th class="py-3 px-3">Duration</th>
+          <th class="py-3 px-3">Overall Score</th>
+          <th class="py-3 px-3 text-right">Report</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800/70">
+        {% for s in sessions %}
+        <tr class="hover:bg-slate-800/40">
+          <td class="py-3 px-3 text-slate-300 text-xs">{{ s.start_time|date:"d M Y, H:i" }}</td>
+          <td class="py-3 px-3 font-semibold text-white">{{ s.domain }}</td>
+          <td class="py-3 px-3 text-slate-300">{{ s.interview_type }}</td>
+          <td class="py-3 px-3"><span class="px-2.5 py-0.5 rounded-full text-xs bg-indigo-500/20 text-indigo-300">{{ s.current_difficulty }}</span></td>
+          <td class="py-3 px-3 text-slate-300">{{ s.questions.count }} / {{ s.max_questions }}</td>
+          <td class="py-3 px-3 text-slate-300">{{ s.duration_minutes }} mins</td>
+          <td class="py-3 px-3 font-bold text-emerald-400">{{ s.overall_score }} / 10</td>
+          <td class="py-3 px-3 text-right">
+            {% if s.status == 'completed' %}
+            <a href="{% url 'interview_result' s.id %}" class="px-3.5 py-1.5 rounded-lg bg-indigo-600/25 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-semibold transition">Open Report</a>
+            {% else %}
+            <a href="{% url 'live_interview_room' s.id %}" class="px-3.5 py-1.5 rounded-lg bg-emerald-600/25 text-emerald-300 hover:bg-emerald-600 hover:text-white text-xs font-semibold transition">Continue</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-sm text-slate-400 py-8 text-center">No interview sessions recorded yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

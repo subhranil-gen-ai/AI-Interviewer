@@ -1,0 +1,56 @@
+{% extends "core/base.html" %}
+{% block title %}Recruiter AI Candidate Screening Portal – AI Interviewer{% endblock %}
+{% block content %}
+<div class="space-y-8">
+  <div class="glass-card p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-l-4 border-l-purple-500">
+    <div>
+      <span class="text-xs font-semibold uppercase tracking-wider text-purple-400">Module 10 • Ethical AI Talent Screening & Decision Support</span>
+      <h1 class="text-2xl font-extrabold text-white mt-0.5">Recruiter Screening & Candidate Comparison Hub</h1>
+      <p class="text-xs text-slate-300 mt-1">Create job requisitions, upload multiple candidate PDF/DOCX resumes, and compare job-match percentages with full fairness compliance.</p>
+    </div>
+    <a href="{% url 'job_create' %}" class="px-5 py-2.5 rounded-xl font-semibold text-xs text-white gradient-brand shadow-lg shadow-indigo-500/30">
+      + Create New Job Requisition
+    </a>
+  </div>
+
+  <!-- Ethical Fairness Banner -->
+  <div class="p-4 rounded-xl bg-indigo-950/50 border border-indigo-500/30 text-xs text-indigo-200">
+    <strong>Fairness & Human-in-the-Loop Policy:</strong> Screening scores are decision-support estimates computed strictly from technical skills, projects, experience, and educational qualifications. Protected characteristics (gender, age, religion, caste, ethnicity, disability) are never evaluated, and final hiring decisions remain with human recruiters.
+  </div>
+
+  <!-- Active Job Requisitions -->
+  <div class="glass-card p-6 rounded-2xl space-y-4">
+    <h2 class="text-lg font-bold text-white">Your Screening Job Requisitions ({{ jobs.count }})</h2>
+    {% if jobs %}
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for job in jobs %}
+      <div class="p-5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white">{{ job.job_title }}</h3>
+          <span class="px-2.5 py-0.5 rounded-full text-xs bg-purple-500/20 text-purple-300 font-semibold">
+            {{ job.screenings.count }} Screened
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 line-clamp-2">{{ job.job_description }}</p>
+        <div class="flex flex-wrap gap-1.5">
+          {% for sk in job.get_required_skills %}
+          <span class="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 text-[11px]">{{ sk }}</span>
+          {% endfor %}
+        </div>
+        <div class="flex items-center gap-2 pt-2">
+          <a href="{% url 'candidate_screening' job.id %}" class="flex-1 text-center py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
+            Upload & Screen Resumes
+          </a>
+          <a href="{% url 'candidate_comparison' job.id %}" class="flex-1 text-center py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition">
+            Compare Candidates
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-400 py-4">No job descriptions created yet. Click <strong>+ Create New Job Requisition</strong> to begin screening candidates.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

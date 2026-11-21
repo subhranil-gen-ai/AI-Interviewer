@@ -1,0 +1,75 @@
+{% extends "core/base.html" %}
+{% block title %}Candidate Screening – {{ job.job_title }}{% endblock %}
+{% block content %}
+<div class="space-y-8">
+  <div class="glass-card p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div>
+      <span class="text-xs font-semibold uppercase text-purple-400">Job Requisition #{{ job.id }}</span>
+      <h1 class="text-2xl font-extrabold text-white">{{ job.job_title }}</h1>
+      <p class="text-xs text-slate-300 mt-1">Required Skills: <strong>{{ job.get_required_skills|join:", " }}</strong> • Min Experience: {{ job.minimum_experience_years }} yrs</p>
+    </div>
+    <a href="{% url 'candidate_comparison' job.id %}" class="px-5 py-2.5 rounded-xl font-semibold text-xs text-white gradient-brand">
+      Open Multi-Candidate Comparison Dashboard →
+    </a>
+  </div>
+
+  <!-- Upload Multiple Candidate Resumes Form -->
+  <div class="glass-card p-6 rounded-2xl space-y-4">
+    <h2 class="text-lg font-bold text-white">Upload Multiple Candidate Resumes (PDF / DOCX)</h2>
+    <form method="POST" action="{% url 'candidate_screening' job.id %}" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      <input type="file" name="candidate_resumes" multiple accept=".pdf,.docx,.txt" class="block w-full text-sm text-slate-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer" />
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Or paste a candidate resume text directly for instant screening:</label>
+        <textarea name="pasted_candidate_resume" rows="3" placeholder="Candidate Name, Education, Skills, Projects, Internships..." class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs"></textarea>
+      </div>
+      <button type="submit" class="px-6 py-2.5 rounded-xl font-semibold text-xs text-white gradient-brand">
+        Run Ethical AI Candidate Screening
+      </button>
+    </form>
+  </div>
+
+  <!-- Individual Candidate Screening Reports -->
+  <div class="space-y-4">
+    <h2 class="text-lg font-bold text-white">Screened Candidate Reports ({{ screenings.count }})</h2>
+    {% for sc in screenings %}
+    {% with rep=sc.get_screening_report %}
+    <div class="glass-card p-6 rounded-2xl space-y-4 border-l-4 {% if sc.match_score >= 75 %}border-l-emerald-500{% elif sc.match_score >= 55 %}border-l-amber-500{% else %}border-l-rose-500{% endif %}">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-extrabold text-white">{{ sc.candidate_name }}</h3>
+          <span class="text-xs text-slate-400">File: {{ sc.resume.original_filename }} • Screened: {{ sc.screened_at|date:"d M Y, H:i" }}</span>
+        </div>
+        <div class="text-right">
+          <span class="text-xs uppercase text-slate-400 block">Decision-Support Match Estimate</span>
+          <span class="text-2xl font-extrabold text-emerald-400">{{ sc.match_score }}%</span>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-200">{{ rep.resume_summary }}</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5">
+          <div><strong class="text-emerald-400">Matching Skills:</strong> <span class="text-slate-200">{{ rep.matching_skills|join:", "|default:"None" }}</span></div>
+          <div><strong class="text-rose-400">Missing Required Skills:</strong> <span class="text-slate-200">{{ rep.missing_skills|join:", "|default:"None" }}</span></div>
+          <div><strong class="text-indigo-300">Relevant Projects:</strong> <span class="text-slate-200">{{ rep.relevant_projects|join:"; " }}</span></div>
+        </div>
+        <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1.5">
+          <div><strong class="text-purple-300">Experience & Internships:</strong> <span class="text-slate-200">{{ rep.experience_summary }}</span></div>
+          <div><strong class="text-blue-300">Strengths:</strong> <span class="text-slate-200">{{ rep.strengths|join:" • " }}</span></div>
+          <div><strong class="text-amber-300">Potential Skill Gaps:</strong> <span class="text-slate-200">{{ rep.potential_skill_gaps|join:" • " }}</span></div>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300">
+        <strong>AI Screening Explanation:</strong> {{ rep.ai_screening_explanation }}
+        <div class="text-[11px] text-slate-400 mt-1">{{ rep.fairness_disclaimer }}</div>
+      </div>
+    </div>
+    {% endwith %}
+    {% empty %}
+    <p class="text-sm text-slate-400">No candidates screened for this job yet. Upload one or more resumes above.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
