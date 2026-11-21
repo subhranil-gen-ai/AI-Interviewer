@@ -4,6 +4,7 @@ Uses environment variables for all secrets and service URLs.
 """
 import os
 from pathlib import Path
+import dj_database_url
 
 try:
     from dotenv import load_dotenv
@@ -13,14 +14,14 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-ai-interviewer-academic-dev-key-change-in-prod-98237492"
-)
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.getenv(
+    "DJANGO_ALLOWED_HOSTS",
+    "localhost,127.0.0.1"
+).split(",")
 
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -73,12 +75,22 @@ WSGI_APPLICATION = "ai_interviewer.wsgi.application"
 ASGI_APPLICATION = "ai_interviewer.asgi.application"
 
 # SQLite Persistent Database (Module 3 & Module 14)
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -95,6 +107,14 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
